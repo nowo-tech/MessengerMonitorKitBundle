@@ -1,0 +1,16 @@
+# Messenger of the demo: one Doctrine (MySQL) queue `async` and a listable Doctrine failure transport `failed`.
+# Failed messages are parked at once (max_retries: 0) so the seed fills the failure transport quickly.
+framework:
+    messenger:
+        failure_transport: failed
+        transports:
+            async:
+                dsn: 'doctrine://default?queue_name=async'
+                retry_strategy:
+                    max_retries: 0
+            failed: 'doctrine://default?queue_name=failed'
+        routing:
+            App\Message\SendInvoiceEmail: async
+            App\Message\SyncInventory: async
+            App\Message\TrackPageView: async
+    lock: 'flock'

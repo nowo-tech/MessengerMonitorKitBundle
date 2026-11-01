@@ -1,0 +1,13 @@
+{
+    "bundles": {
+        "Zenstruck\\Messenger\\Monitor\\ZenstruckMessengerMonitorBundle": [
+            "all"
+        ],
+        "Nowo\\MessengerMonitorKitBundle\\NowoMessengerMonitorKitBundle": [
+            "all"
+        ]
+    },
+    "copy-from-recipe": {
+        "config/": "%CONFIG_DIR%/"
+    }
+}

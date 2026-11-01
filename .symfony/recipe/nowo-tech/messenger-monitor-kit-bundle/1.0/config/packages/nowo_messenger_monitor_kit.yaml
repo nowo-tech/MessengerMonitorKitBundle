@@ -1,0 +1,23 @@
+# Nowo Messenger Monitor Kit Bundle — see https://github.com/nowo-tech/MessengerMonitorKitBundle/blob/main/docs/CONFIGURATION.md
+nowo_messenger_monitor_kit:
+    doctrine:
+        table_prefix: ''
+    recording:
+        enabled: true
+        # optional_message_classes: [App\Message\HighVolumeMessage]
+    settings:
+        # cache (shared pool) | instance_settings (nowo-tech/instance-settings-bundle) | config (read-only)
+        store: cache
+        cache_pool: cache.app
+    retention:
+        auto_purge: false
+        older_than: 1-month
+        keep_failed: true
+    web_ui:
+        enabled: true
+        path_prefix: /admin/messenger
+    security:
+        access_roles: [ROLE_ADMIN]
+        # manage_roles: [ROLE_SUPER_ADMIN]   # retry / remove / purge / settings / payloads (default: access_roles)
+        # DEV/DEMO only — never enable in production (refused without kernel.debug):
+        allow_unauthenticated: false

@@ -1,0 +1,178 @@
+nav:
+    label: Messenger-monitor
+    dashboard: Dashboard
+    history: Geschiedenis
+    transports: Transports
+    settings: Instellingen
+dashboard:
+    title: Messenger-monitor
+    intro: 'Verwerkte berichten van de afgelopen 24 uur, wachtrijen, workers en opnamestatus.'
+    transports: Transports
+    workers: Workers
+    recent_failures: 'Recente fouten'
+    no_workers: 'Er draait geen worker.'
+    no_failures: 'Geen mislukt bericht in de afgelopen 7 dagen.'
+    kpi:
+        processed: Verwerkt
+        last_24h: 'Afgelopen 24 uur'
+        failed: Mislukt
+        wait: Wachttijd
+        handling: Verwerkingstijd
+        average: 'Gemiddelde, afgelopen 24 uur'
+        pending: 'In afwachting'
+        queues: 'Berichten in de wachtrijen'
+        parked: 'Mislukte berichten'
+        failure_transports: 'Geparkeerd op de fouttransports'
+        workers: Workers
+        recording_on: 'Opname aan'
+        recording_off: 'Opname uit'
+        no_retention: 'Geen automatische opschoning'
+worker:
+    status: Status
+    transports: Transports
+    handled: Verwerkt
+    memory: Geheugen
+    uptime: 'Actief sinds'
+history:
+    title: Berichtgeschiedenis
+    intro: 'Elk verwerkt of mislukt bericht, opgenomen zolang de opname aan staat.'
+    empty_title: 'Geen berichten'
+    empty: 'Geen bericht voldoet aan deze filters.'
+    show_intro: 'Opgenomen bericht'
+    back: 'Terug naar de geschiedenis'
+    attempts: 'Pogingen van dit bericht'
+    section:
+        summary: Samenvatting
+        timing: Tijden
+        failure: Fout
+        failure_message: Foutmelding
+        results: 'Resultaten van de handlers'
+    filter:
+        period: Periode
+        status: Status
+        transport: Transport
+        type: Berichttype
+        per_page: 'Per pagina'
+        any: Alle
+    period:
+        in-last-hour: 'Afgelopen uur'
+        in-last-day: 'Afgelopen 24 uur'
+        in-last-week: 'Afgelopen 7 dagen'
+        in-last-month: 'Afgelopen maand'
+        today: Vandaag
+        yesterday: Gisteren
+        last-week: 'Vorige week'
+        last-month: 'Vorige kalendermaand'
+        all: Alles
+status:
+    success: Geslaagd
+    failed: Mislukt
+kind:
+    queue: Wachtrij
+    failure: Fouttransport
+column:
+    id: Id
+    type: Bericht
+    description: Omschrijving
+    status: Status
+    transport: Transport
+    attempt: Poging
+    run: Run
+    tags: Tags
+    dispatched: Verzonden
+    received: Ontvangen
+    finished: Afgerond
+    wait: Wachttijd
+    handle: Verwerking
+    memory: Geheugen
+    failure_type: Exception
+    error: Fout
+    target: 'Opnieuw naar'
+    kind: Soort
+    count: Berichten
+action:
+    view: Bekijken
+    messages: Berichten
+    retry: 'Opnieuw proberen'
+    remove: Verwijderen
+    retry_all: 'Alles opnieuw proberen'
+    remove_all: 'Alles verwijderen'
+confirm:
+    retry_title: 'Dit bericht opnieuw proberen?'
+    retry: 'Het bericht gaat terug naar transport "%transport%" en wordt opnieuw verwerkt door de workers.'
+    retry_duplicate: 'De handlers hebben mogelijk al een deel van hun werk gedaan (e-mails, meldingen, betalingen). Opnieuw proberen kan die effecten herhalen. Het gaat terug naar "%transport%".'
+    remove_title: 'Dit bericht verwijderen?'
+    remove: 'Het mislukte bericht wordt van het fouttransport verwijderd. Dit kan niet ongedaan worden gemaakt.'
+    retry_all_title: 'De mislukte berichten opnieuw proberen?'
+    retry_all: 'Tot %count% mislukte berichten gaan terug naar hun oorspronkelijke transport. Berichten zonder blijven geparkeerd.'
+    remove_all_title: 'De mislukte berichten verwijderen?'
+    remove_all: 'Tot %count% mislukte berichten worden verwijderd. Dit kan niet ongedaan worden gemaakt.'
+transports:
+    title: Transports
+    intro: 'Wachtende berichten op elk transport. Open een transport om zijn berichten te tonen.'
+    empty_title: 'Geen transports'
+    empty: 'Geen enkel Messenger-transport kan geteld worden.'
+    back: 'Terug naar de transports'
+transport:
+    title: 'Transport "%name%"'
+    intro: 'De eerste %limit% wachtende berichten op dit transport.'
+    intro_failure: 'De eerste %limit% geparkeerde berichten op dit fouttransport. Opnieuw proberen stuurt het bericht terug naar het transport waarop het mislukte.'
+    empty_title: 'Geen berichten'
+    empty: 'Dit transport bevat geen berichten.'
+message:
+    intro: 'Wachtend bericht op "%transport%"'
+    back: 'Terug naar het transport'
+    payload_hidden: 'De inhoud wordt alleen aan beheerders getoond (of inhoud is uitgeschakeld).'
+    section:
+        error: Fout
+        stamps: Stamps
+        error_message: Foutmelding
+        payload: 'Inhoud (afgeschermd)'
+settings:
+    title: 'Instellingen van de Messenger-monitor'
+    intro: 'Runtime-schakelaars van de geschiedenis en opschoning van oude rijen. Wijzigingen gelden zonder nieuwe deploy.'
+    intro_store: 'Workers nemen een wijziging over binnen het ingestelde controle-interval.'
+    intro_readonly: 'Deze schakelaars komen uit de configuratie (settings.store: config): opname %recording%, bewaartermijn %retention%.'
+    switches: 'Opname en bewaartermijn'
+    save: Opslaan
+    recording: 'Geschiedenis opnemen'
+    recording_help: "Uit stopt het schrijven van geschiedenisrijen; pagina's, opschoningen en nieuwe pogingen blijven werken."
+    record_optional: 'Berichten met hoog volume opnemen'
+    record_optional_help: 'Neemt ook de als optioneel ingestelde berichtklassen op (recording.optional_message_classes).'
+    auto_purge: 'Automatisch opschonen'
+    auto_purge_help: 'Het geplande opschoningscommando verwijdert rijen ouder dan de bewaartermijn hieronder.'
+    retention: Bewaartermijn
+    retention_help: 'De automatische opschoning verwijdert geschiedenis die ouder is dan dit.'
+    keep_failed: 'Mislukte berichten bewaren'
+    keep_failed_help: 'De automatische opschoning bewaart mislukte rijen.'
+    section:
+        label: Messenger-monitor
+        intro: 'Opname van de geschiedenis en bewaartermijn van de Messenger-monitor.'
+purge:
+    title: 'Geschiedenis opschonen'
+    intro: '%count% rijen opgenomen. Laatste automatische opschoning: %last%.'
+    submit: Opschonen
+    older_than: 'Rijen verwijderen'
+    older_than_help: 'Rijen worden in batches verwijderd; een heel grote opschoning moet mogelijk opnieuw draaien.'
+    keep_failed: 'Mislukte berichten bewaren'
+    keep_failed_help: 'Alleen geslaagde rijen worden verwijderd.'
+period:
+    1-hour: 'Ouder dan 1 uur'
+    1-day: 'Ouder dan 1 dag'
+    1-week: 'Ouder dan 1 week'
+    1-month: 'Ouder dan 1 maand'
+    3-months: 'Ouder dan 3 maanden'
+    6-months: 'Ouder dan 6 maanden'
+    1-year: 'Ouder dan 1 jaar'
+    all: 'Alle rijen'
+flash:
+    retried: '"%message%" is teruggestuurd naar "%transport%".'
+    removed: '"%message%" is verwijderd.'
+    retried_all: '%count% berichten zijn teruggestuurd naar hun transport (%skipped% overgeslagen).'
+    removed_all: '%count% berichten zijn verwijderd (%skipped% overgeslagen).'
+    not_found: 'Het bericht staat niet meer op het fouttransport.'
+    not_retryable: 'Het bericht heeft geen oorspronkelijk transport om naar terug te gaan; het blijft geparkeerd.'
+    locked: 'Iemand anders behandelt dit bericht op dit moment; probeer het zo opnieuw.'
+    settings_saved: 'Instellingen opgeslagen.'
+    purged: '%count% geschiedenisrijen verwijderd.'
+    purged_partial: '%count% geschiedenisrijen verwijderd; er zijn meer rijen, schoon opnieuw op of laat de automatische opschoning afronden.'

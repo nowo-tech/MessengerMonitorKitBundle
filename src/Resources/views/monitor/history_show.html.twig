@@ -1,0 +1,22 @@
+{#
+  One Messenger history row (REQ-UI-003): UiKit show scaffold.
+  Variables: page (View\ShowPage from MonitorPageFactory::historyShow(): summary, timing and failure sections),
+  attempts (View\Table, every attempt of the same run), results (redacted JSON of the handler results, managers only,
+  or null), failure (redacted failure message or null). Both texts are printed escaped inside <pre>.
+  Data block: nowo_ui_show_after.
+#}
+{% extends '@NowoUiKit/page/show.html.twig' %}
+
+{% block nowo_ui_show_after %}
+    {% set _d = 'NowoMessengerMonitorKitBundle' %}
+    {% if failure %}
+        {% set _failure %}<pre class="nowo-ui-code-block" data-testid="mmk-failure">{{ failure }}</pre>{% endset %}
+        {{ include(nowo_ui_partial('card', page.bundle), {title: 'history.section.failure_message'|trans({}, _d), body: _failure, bundle: page.bundle}, false) }}
+    {% endif %}
+    {% if results %}
+        {% set _results %}<pre class="nowo-ui-code-block" data-testid="mmk-results">{{ results }}</pre>{% endset %}
+        {{ include(nowo_ui_partial('card', page.bundle), {title: 'history.section.results'|trans({}, _d), body: _results, bundle: page.bundle}, false) }}
+    {% endif %}
+    {% set _attempts %}{{ include('@NowoMessengerMonitorKitBundle/monitor/_table.html.twig', {table: attempts, bundle: page.bundle}, false) }}{% endset %}
+    {{ include(nowo_ui_partial('card', page.bundle), {title: 'history.attempts'|trans({}, _d), body: _attempts, bundle: page.bundle}, false) }}
+{% endblock %}

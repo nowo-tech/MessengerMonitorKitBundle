@@ -1,0 +1,19 @@
+{#
+  Cells of one history row (shared by the history list and the dashboard / attempts tables): the `status` value
+  (success | failed) renders as a translated badge, every other value escaped, empty values as a muted dash.
+  Required: columns (list<View\Column>), row (array). Optional: bundle.
+#}
+{% set _b = bundle|default(null) %}
+{% for column in columns %}
+    {%- set _value = row[column.key]|default(null) %}
+    {%- set _blank = _value is null or _value is same as('') %}
+    <td class="{{ nowo_ui_class('table_cell', _b) }}{{ _blank ? ' ' ~ nowo_ui_class('table_cell_muted', _b) }} nowo-ui-cell--{{ column.align }}" data-label="{{ column.label|nowo_ui_trans }}"{% if not column.required and column.priority and column.priority > 1 %} data-nowo-ui-priority="{{ column.priority }}"{% endif %}>
+        {%- if column.key == 'status' and not _blank -%}
+            <span class="{{ nowo_ui_class(_value == 'failed' ? 'badge_danger' : 'badge_success', _b) }}">{{ ('status.' ~ _value)|trans({}, 'NowoMessengerMonitorKitBundle') }}</span>
+        {%- elseif column.key == 'kind' and not _blank -%}
+            <span class="{{ nowo_ui_class(_value == 'failure' ? 'badge_warning' : 'badge_neutral', _b) }}">{{ ('kind.' ~ _value)|trans({}, 'NowoMessengerMonitorKitBundle') }}</span>
+        {%- else -%}
+            {{ _blank ? '—' : _value }}
+        {%- endif -%}
+    </td>
+{% endfor %}

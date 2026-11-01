@@ -1,0 +1,11 @@
+{#
+  A monitor table (View\Table) through the UiKit `table` partial, with the cells of _cells.html.twig (status / kind
+  badges). Used by the dashboard cards and the attempts of a history row.
+  Required: table (View\Table). Optional: bundle.
+#}
+{% set _b = bundle|default(table.bundle) %}
+{% set _rows_html = {} %}
+{% for row_key, row in table.rows %}
+    {% set _rows_html = _rows_html|merge({('k' ~ row_key): include('@NowoMessengerMonitorKitBundle/monitor/_cells.html.twig', {columns: table.columns, row: row, bundle: _b}, false)}) %}
+{% endfor %}
+{{ include(nowo_ui_partial('table', _b), {table: table, rows_html: _rows_html, bundle: _b}, false) }}

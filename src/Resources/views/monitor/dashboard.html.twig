@@ -1,0 +1,30 @@
+{#
+  Messenger monitor dashboard (REQ-UI-003): UiKit dashboard scaffold.
+  Variables: page (View\DashboardPage from MonitorPageFactory::dashboard(): header + area nav, KPI tiles of the last
+  24 hours, the queues, the workers and the recording switch), transports / workers / failures (View\Table),
+  settings (MonitorSettings).
+  Data block: nowo_ui_dashboard_cards (three cards: transports, workers, recent failures).
+#}
+{% extends '@NowoUiKit/page/dashboard.html.twig' %}
+
+{% block nowo_ui_dashboard_cards %}
+    {% set _d = 'NowoMessengerMonitorKitBundle' %}
+    {% set _transports %}{{ include('@NowoMessengerMonitorKitBundle/monitor/_table.html.twig', {table: transports, bundle: page.bundle}, false) }}{% endset %}
+    {% set _workers %}
+        {% if workers.rows is empty %}
+            {{ include(nowo_ui_partial('empty', page.bundle), {message: 'dashboard.no_workers'|trans({}, _d)}, false) }}
+        {% else %}
+            {{ include('@NowoMessengerMonitorKitBundle/monitor/_table.html.twig', {table: workers, bundle: page.bundle}, false) }}
+        {% endif %}
+    {% endset %}
+    {% set _failures %}
+        {% if failures.rows is empty %}
+            {{ include(nowo_ui_partial('empty', page.bundle), {message: 'dashboard.no_failures'|trans({}, _d)}, false) }}
+        {% else %}
+            {{ include('@NowoMessengerMonitorKitBundle/monitor/_table.html.twig', {table: failures, bundle: page.bundle}, false) }}
+        {% endif %}
+    {% endset %}
+    {{ include(nowo_ui_partial('card', page.bundle), {title: 'dashboard.transports'|trans({}, _d), body: _transports, bundle: page.bundle, id: 'mmk-card-transports'}, false) }}
+    {{ include(nowo_ui_partial('card', page.bundle), {title: 'dashboard.workers'|trans({}, _d), body: _workers, bundle: page.bundle, id: 'mmk-card-workers'}, false) }}
+    {{ include(nowo_ui_partial('card', page.bundle), {title: 'dashboard.recent_failures'|trans({}, _d), body: _failures, bundle: page.bundle, id: 'mmk-card-failures'}, false) }}
+{% endblock %}

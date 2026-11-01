@@ -1,0 +1,5 @@
+# zenstruck/messenger-monitor-bundle: the history entity is set by the kit (history.bundle_entity: true); the worker
+# status lives in the shared cache pool.
+zenstruck_messenger_monitor:
+    cache:
+        pool: cache.app

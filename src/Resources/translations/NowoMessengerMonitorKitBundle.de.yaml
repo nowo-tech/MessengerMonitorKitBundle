@@ -1,0 +1,178 @@
+nav:
+    label: Messenger-Monitor
+    dashboard: Übersicht
+    history: Verlauf
+    transports: Transporte
+    settings: Einstellungen
+dashboard:
+    title: Messenger-Monitor
+    intro: 'Verarbeitete Nachrichten der letzten 24 Stunden, Warteschlangen, Worker und Aufzeichnungsstatus.'
+    transports: Transporte
+    workers: Worker
+    recent_failures: 'Letzte Fehler'
+    no_workers: 'Es läuft kein Worker.'
+    no_failures: 'Keine fehlgeschlagene Nachricht in den letzten 7 Tagen.'
+    kpi:
+        processed: Verarbeitet
+        last_24h: 'Letzte 24 Stunden'
+        failed: Fehlgeschlagen
+        wait: Wartezeit
+        handling: Verarbeitungszeit
+        average: 'Durchschnitt, letzte 24 Stunden'
+        pending: Ausstehend
+        queues: 'Nachrichten in den Warteschlangen'
+        parked: 'Fehlgeschlagene Nachrichten'
+        failure_transports: 'Geparkt auf den Fehler-Transporten'
+        workers: Worker
+        recording_on: 'Aufzeichnung an'
+        recording_off: 'Aufzeichnung aus'
+        no_retention: 'Keine automatische Bereinigung'
+worker:
+    status: Status
+    transports: Transporte
+    handled: Verarbeitet
+    memory: Speicher
+    uptime: 'Läuft seit'
+history:
+    title: Nachrichtenverlauf
+    intro: 'Jede verarbeitete oder fehlgeschlagene Nachricht, aufgezeichnet solange die Aufzeichnung an ist.'
+    empty_title: 'Keine Nachrichten'
+    empty: 'Keine Nachricht entspricht diesen Filtern.'
+    show_intro: 'Aufgezeichnete Nachricht'
+    back: 'Zurück zum Verlauf'
+    attempts: 'Versuche dieser Nachricht'
+    section:
+        summary: Zusammenfassung
+        timing: Zeiten
+        failure: Fehler
+        failure_message: Fehlermeldung
+        results: 'Ergebnisse der Handler'
+    filter:
+        period: Zeitraum
+        status: Status
+        transport: Transport
+        type: Nachrichtentyp
+        per_page: 'Pro Seite'
+        any: Alle
+    period:
+        in-last-hour: 'Letzte Stunde'
+        in-last-day: 'Letzte 24 Stunden'
+        in-last-week: 'Letzte 7 Tage'
+        in-last-month: 'Letzter Monat'
+        today: Heute
+        yesterday: Gestern
+        last-week: 'Letzte Woche'
+        last-month: 'Letzter Kalendermonat'
+        all: 'Gesamter Zeitraum'
+status:
+    success: Erfolgreich
+    failed: Fehlgeschlagen
+kind:
+    queue: Warteschlange
+    failure: Fehler-Transport
+column:
+    id: Id
+    type: Nachricht
+    description: Beschreibung
+    status: Status
+    transport: Transport
+    attempt: Versuch
+    run: Lauf
+    tags: Tags
+    dispatched: Gesendet
+    received: Empfangen
+    finished: Beendet
+    wait: Wartezeit
+    handle: Verarbeitung
+    memory: Speicher
+    failure_type: Exception
+    error: Fehler
+    target: 'Wiederholen auf'
+    kind: Art
+    count: Nachrichten
+action:
+    view: Ansehen
+    messages: Nachrichten
+    retry: Wiederholen
+    remove: Entfernen
+    retry_all: 'Alle wiederholen'
+    remove_all: 'Alle entfernen'
+confirm:
+    retry_title: 'Diese Nachricht wiederholen?'
+    retry: 'Die Nachricht geht zurück auf den Transport "%transport%" und wird von dessen Workern erneut verarbeitet.'
+    retry_duplicate: 'Ihre Handler haben möglicherweise schon einen Teil ihrer Arbeit erledigt (E-Mails, Benachrichtigungen, Zahlungen). Eine Wiederholung kann diese Wirkungen wiederholen. Sie geht zurück auf "%transport%".'
+    remove_title: 'Diese Nachricht entfernen?'
+    remove: 'Die fehlgeschlagene Nachricht wird vom Fehler-Transport gelöscht. Dies kann nicht rückgängig gemacht werden.'
+    retry_all_title: 'Die fehlgeschlagenen Nachrichten wiederholen?'
+    retry_all: 'Bis zu %count% fehlgeschlagene Nachrichten gehen zurück auf ihren ursprünglichen Transport. Nachrichten ohne einen bleiben geparkt.'
+    remove_all_title: 'Die fehlgeschlagenen Nachrichten entfernen?'
+    remove_all: 'Bis zu %count% fehlgeschlagene Nachrichten werden gelöscht. Dies kann nicht rückgängig gemacht werden.'
+transports:
+    title: Transporte
+    intro: 'Wartende Nachrichten auf jedem Transport. Öffnen Sie einen Transport, um seine Nachrichten aufzulisten.'
+    empty_title: 'Keine Transporte'
+    empty: 'Kein Messenger-Transport kann gezählt werden.'
+    back: 'Zurück zu den Transporten'
+transport:
+    title: 'Transport "%name%"'
+    intro: 'Die ersten %limit% wartenden Nachrichten auf diesem Transport.'
+    intro_failure: 'Die ersten %limit% geparkten Nachrichten auf diesem Fehler-Transport. Wiederholen schickt die Nachricht zurück auf den Transport, auf dem sie fehlgeschlagen ist.'
+    empty_title: 'Keine Nachrichten'
+    empty: 'Dieser Transport enthält keine Nachricht.'
+message:
+    intro: 'Wartende Nachricht auf "%transport%"'
+    back: 'Zurück zum Transport'
+    payload_hidden: 'Der Inhalt wird nur Verwaltern angezeigt (oder Inhalte sind deaktiviert).'
+    section:
+        error: Fehler
+        stamps: Stamps
+        error_message: Fehlermeldung
+        payload: 'Inhalt (geschwärzt)'
+settings:
+    title: 'Einstellungen des Messenger-Monitors'
+    intro: 'Laufzeitschalter des Verlaufs und Bereinigung alter Zeilen. Änderungen gelten ohne neues Deployment.'
+    intro_store: 'Worker übernehmen eine Änderung innerhalb des konfigurierten Prüfintervalls.'
+    intro_readonly: 'Diese Schalter stammen aus der Konfiguration (settings.store: config): Aufzeichnung %recording%, Aufbewahrung %retention%.'
+    switches: 'Aufzeichnung und Aufbewahrung'
+    save: Speichern
+    recording: 'Verlauf aufzeichnen'
+    recording_help: 'Aus beendet das Schreiben von Verlaufszeilen; Seiten, Bereinigungen und Wiederholungen funktionieren weiter.'
+    record_optional: 'Nachrichten mit hohem Volumen aufzeichnen'
+    record_optional_help: 'Zeichnet auch die als optional konfigurierten Nachrichtenklassen auf (recording.optional_message_classes).'
+    auto_purge: 'Automatisch bereinigen'
+    auto_purge_help: 'Der geplante Bereinigungsbefehl löscht Zeilen, die älter als die Aufbewahrung unten sind.'
+    retention: Aufbewahrung
+    retention_help: 'Die automatische Bereinigung löscht Verlauf, der älter als dieser Zeitraum ist.'
+    keep_failed: 'Fehlgeschlagene Nachrichten behalten'
+    keep_failed_help: 'Die automatische Bereinigung behält fehlgeschlagene Zeilen.'
+    section:
+        label: Messenger-Monitor
+        intro: 'Verlaufsaufzeichnung und Aufbewahrung des Messenger-Monitors.'
+purge:
+    title: 'Verlauf bereinigen'
+    intro: '%count% Zeilen aufgezeichnet. Letzte automatische Bereinigung: %last%.'
+    submit: Bereinigen
+    older_than: 'Zeilen löschen'
+    older_than_help: 'Zeilen werden stapelweise gelöscht; eine sehr große Bereinigung muss eventuell erneut laufen.'
+    keep_failed: 'Fehlgeschlagene Nachrichten behalten'
+    keep_failed_help: 'Nur erfolgreiche Zeilen werden gelöscht.'
+period:
+    1-hour: 'Älter als 1 Stunde'
+    1-day: 'Älter als 1 Tag'
+    1-week: 'Älter als 1 Woche'
+    1-month: 'Älter als 1 Monat'
+    3-months: 'Älter als 3 Monate'
+    6-months: 'Älter als 6 Monate'
+    1-year: 'Älter als 1 Jahr'
+    all: 'Alle Zeilen'
+flash:
+    retried: '"%message%" wurde zurück auf "%transport%" geschickt.'
+    removed: '"%message%" wurde entfernt.'
+    retried_all: '%count% Nachrichten wurden zurück auf ihren Transport geschickt (%skipped% übersprungen).'
+    removed_all: '%count% Nachrichten wurden entfernt (%skipped% übersprungen).'
+    not_found: 'Die Nachricht ist nicht mehr auf dem Fehler-Transport.'
+    not_retryable: 'Die Nachricht hat keinen ursprünglichen Transport, auf den sie zurück kann; sie bleibt geparkt.'
+    locked: 'Jemand anderes bearbeitet diese Nachricht gerade; versuchen Sie es gleich noch einmal.'
+    settings_saved: 'Einstellungen gespeichert.'
+    purged: '%count% Verlaufszeilen gelöscht.'
+    purged_partial: '%count% Verlaufszeilen gelöscht; weitere Zeilen passen, bereinigen Sie erneut oder lassen Sie die automatische Bereinigung fertig werden.'
