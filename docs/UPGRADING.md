@@ -3,12 +3,21 @@
 ## Table of contents
 
 - [Unreleased (1.0.0)](#unreleased-100)
+- [To 1.0.0](#to-100)
   - [Requirements](#requirements)
   - [Adopting the kit from an in-app monitor](#adopting-the-kit-from-an-in-app-monitor)
   - [Template contract](#template-contract)
   - [Breaking changes](#breaking-changes)
 
 ## Unreleased (1.0.0)
+
+## To 1.0.0
+
+From **0.0.0**:
+
+```bash
+composer update nowo-tech/messenger-monitor-kit-bundle
+```
 
 First release.
 

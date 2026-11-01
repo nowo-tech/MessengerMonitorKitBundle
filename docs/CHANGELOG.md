@@ -5,6 +5,10 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-11-01
+
+First release: admin UI, retry, redaction, purge and queue depth on top of zenstruck/messenger-monitor-bundle See [UPGRADING](UPGRADING.md#to-100).
+
 First release candidate (1.0.0), extracted and generalised from the Symfony Beacon messenger monitor (kit #15 and
 KIT-55), built on top of `zenstruck/messenger-monitor-bundle` ^0.6.
 
