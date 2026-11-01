@@ -104,7 +104,7 @@ confirm:
     remove_title: 'Rimuovere questo messaggio?'
     remove: "Il messaggio fallito viene eliminato dal trasporto di errore. L'operazione è irreversibile."
     retry_all_title: 'Riprovare i messaggi falliti?'
-    retry_all: 'Fino a %count% messaggi falliti tornano sul loro trasporto originale. Quelli che non ne hanno uno restano parcheggiati.'
+    retry_all: 'Fino a %count% messaggi falliti tornano sul loro trasporto originale. Quelli che non ne hanno uno restano parcheggiati. I messaggi a rischio di duplicazione vengono saltati: riprovali uno alla volta.'
     remove_all_title: 'Rimuovere i messaggi falliti?'
     remove_all: "Vengono eliminati fino a %count% messaggi falliti. L'operazione è irreversibile."
 transports:

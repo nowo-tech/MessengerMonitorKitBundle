@@ -4,7 +4,7 @@
 **Package**: `nowo-tech/messenger-monitor-kit-bundle`  
 **Last audited**: 2026-11-01
 
-Scope: every file under `src/`. Audit command: `find src -type f | wc -l` → **78**.
+Scope: every file under `src/`. Audit command: `find src -type f | wc -l` → **79**.
 
 ## Bundle and dependency injection
 
@@ -123,6 +123,7 @@ Scope: every file under `src/`. Audit command: `find src -type f | wc -l` → **
 
 | Source file | Spec section | Requirement IDs |
 | --- | --- | --- |
+| `src/Ui/ActionForms.php` | UI view models and Twig | FR-UI-004, FR-SEC-003 |
 | `src/Ui/MonitorPageFactory.php` | UI view models and Twig | FR-UI-002, FR-UI-003, FR-UI-004, FR-UI-005 |
 | `src/Ui/MonitorPages.php` | UI view models and Twig | FR-UI-006 |
 | `src/Ui/MonitorFormat.php` | UI view models and Twig | FR-UI-007 |
@@ -166,6 +167,6 @@ Scope: every file under `src/`. Audit command: `find src -type f | wc -l` → **
 | Forms | 3 |
 | UI view models and Twig | 13 |
 | Translations | 7 |
-| **Total production sources** | **78** |
+| **Total production sources** | **79** |
 
-Mapped 78 / 78 files under `src/` (100%). No generated or build output is shipped under `src/`.
+Mapped 79 / 79 files under `src/` (100%). No generated or build output is shipped under `src/`.

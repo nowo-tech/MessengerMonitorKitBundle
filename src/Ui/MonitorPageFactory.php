@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Nowo\MessengerMonitorKitBundle\Ui;
 
 use DateTimeImmutable;
-use Nowo\FormKitBundle\Form\CsrfOnlyFormFactory;
 use Nowo\MessengerMonitorKitBundle\Queue\QueueDepthReport;
 use Nowo\MessengerMonitorKitBundle\Routing\MessengerMonitorRoutes;
 use Nowo\MessengerMonitorKitBundle\Settings\MonitorSettings;
@@ -47,17 +46,14 @@ use function is_scalar;
  */
 final readonly class MonitorPageFactory
 {
-    /** CSRF token id of the failure transport actions (retry / remove, one or all); the form action URL is checked too. */
-    public const ACTION_CSRF_ID = 'nowo_messenger_monitor_kit_action';
-
     /**
      * @param UrlGeneratorInterface $urls route URLs
-     * @param CsrfOnlyFormFactory $csrfForms FormKit CSRF-only forms of the POST actions
+     * @param ActionForms $actionForms CSRF forms of the POST actions (one token id per action and target)
      * @param MonitorPages $pages layout / template overrides
      */
     public function __construct(
         private UrlGeneratorInterface $urls,
-        private CsrfOnlyFormFactory $csrfForms,
+        private ActionForms $actionForms,
         private MonitorPages $pages = new MonitorPages(),
     ) {
     }
@@ -169,11 +165,12 @@ final readonly class MonitorPageFactory
      *
      * @param iterable<ProcessedMessage> $attempts every attempt of the same run (oldest first)
      * @param string|null $results redacted JSON of the handler results
-     * @param string|null $failure redacted failure message
+     * @param string|null $failure redacted failure message (managers only, else null)
+     * @param string|null $description redacted message description (managers only, else null)
      *
      * @return array{page: ShowPage, attempts: Table, results: string|null, failure: string|null}
      */
-    public function historyShow(ProcessedMessage $message, iterable $attempts, ?string $results, ?string $failure, bool $canManage): array
+    public function historyShow(ProcessedMessage $message, iterable $attempts, ?string $results, ?string $failure, ?string $description, bool $canManage): array
     {
         $type = $message->type();
         $rows = [];
@@ -188,11 +185,16 @@ final readonly class MonitorPageFactory
             back: new BackLink($this->urls->generate(MessengerMonitorRoutes::HISTORY), MonitorPages::label('history.back'), 'mmk-back'),
         );
 
+        // The description (DescriptionStamp or the message's __toString()) can carry personal data: managers only.
+        $summary = [new DetailItem(MonitorPages::label('column.type'), $type->class())];
+        if ($description !== null) {
+            $summary[] = new DetailItem(MonitorPages::label('column.description'), $description);
+        }
+
         return [
             'page' => new ShowPage($header, [
                 new DetailSection(MonitorPages::label('history.section.summary'), [
-                    new DetailItem(MonitorPages::label('column.type'), $type->class()),
-                    new DetailItem(MonitorPages::label('column.description'), $message->description()),
+                    ...$summary,
                     new DetailItem(MonitorPages::label('column.status'), MonitorPages::label($message->isFailure() ? 'status.failed' : 'status.success'), badge: $message->isFailure() ? 'danger' : 'success'),
                     new DetailItem(MonitorPages::label('column.transport'), $message->transport()),
                     new DetailItem(MonitorPages::label('column.attempt'), $message->attempt()),
@@ -264,8 +266,8 @@ final readonly class MonitorPageFactory
         $manage  = $failure && $canManage;
         $actions = [];
         if ($manage && $rows !== []) {
-            $actions[] = $this->post('custom', 'action.retry_all', MessengerMonitorRoutes::RETRY_ALL, ['name' => $name], self::ACTION_CSRF_ID, new Confirm(MonitorPages::label('confirm.retry_all_title'), MonitorPages::label('confirm.retry_all', ['%count%' => $batchLimit]), MonitorPages::label('action.retry_all'), 'primary'), 'primary', ['data-testid' => 'mmk-retry-all']);
-            $actions[] = $this->post('delete', 'action.remove_all', MessengerMonitorRoutes::REMOVE_ALL, ['name' => $name], self::ACTION_CSRF_ID, new Confirm(MonitorPages::label('confirm.remove_all_title'), MonitorPages::label('confirm.remove_all', ['%count%' => $batchLimit]), MonitorPages::label('action.remove_all')), 'danger', ['data-testid' => 'mmk-remove-all']);
+            $actions[] = $this->post('custom', 'action.retry_all', MessengerMonitorRoutes::RETRY_ALL, ['name' => $name], new Confirm(MonitorPages::label('confirm.retry_all_title'), MonitorPages::label('confirm.retry_all', ['%count%' => $batchLimit]), MonitorPages::label('action.retry_all'), 'primary'), 'primary', ['data-testid' => 'mmk-retry-all']);
+            $actions[] = $this->post('delete', 'action.remove_all', MessengerMonitorRoutes::REMOVE_ALL, ['name' => $name], new Confirm(MonitorPages::label('confirm.remove_all_title'), MonitorPages::label('confirm.remove_all', ['%count%' => $batchLimit]), MonitorPages::label('action.remove_all')), 'danger', ['data-testid' => 'mmk-remove-all']);
         }
 
         $header = new PageHeader(
@@ -293,9 +295,9 @@ final readonly class MonitorPageFactory
                 if ($manage && $row['id'] !== '') {
                     if ($row['target'] !== null) {
                         $risky     = in_array($row['id'], $duplicateRisk, true);
-                        $actions[] = $this->post('custom', 'action.retry', MessengerMonitorRoutes::RETRY, $params, self::ACTION_CSRF_ID, new Confirm(MonitorPages::label('confirm.retry_title'), MonitorPages::label($risky ? 'confirm.retry_duplicate' : 'confirm.retry', ['%transport%' => $row['target']]), MonitorPages::label('action.retry'), $risky ? 'danger' : 'primary'), 'secondary', ['data-testid' => 'mmk-retry']);
+                        $actions[] = $this->post('custom', 'action.retry', MessengerMonitorRoutes::RETRY, $params, new Confirm(MonitorPages::label('confirm.retry_title'), MonitorPages::label($risky ? 'confirm.retry_duplicate' : 'confirm.retry', ['%transport%' => $row['target']]), MonitorPages::label('action.retry'), $risky ? 'danger' : 'primary'), 'secondary', ['data-testid' => 'mmk-retry']);
                     }
-                    $actions[] = $this->post('delete', 'action.remove', MessengerMonitorRoutes::REMOVE, $params, self::ACTION_CSRF_ID, new Confirm(MonitorPages::label('confirm.remove_title'), MonitorPages::label('confirm.remove'), MonitorPages::label('action.remove')), 'danger', ['data-testid' => 'mmk-remove']);
+                    $actions[] = $this->post('delete', 'action.remove', MessengerMonitorRoutes::REMOVE, $params, new Confirm(MonitorPages::label('confirm.remove_title'), MonitorPages::label('confirm.remove'), MonitorPages::label('action.remove')), 'danger', ['data-testid' => 'mmk-remove']);
                 }
 
                 return $actions;
@@ -325,9 +327,9 @@ final readonly class MonitorPageFactory
         $actions = [];
         if ($failure && $canManage) {
             if ($target !== null) {
-                $actions[] = $this->post('custom', 'action.retry', MessengerMonitorRoutes::RETRY, $params, self::ACTION_CSRF_ID, new Confirm(MonitorPages::label('confirm.retry_title'), MonitorPages::label($duplicateRisk ? 'confirm.retry_duplicate' : 'confirm.retry', ['%transport%' => $target]), MonitorPages::label('action.retry'), $duplicateRisk ? 'danger' : 'primary'), 'primary', ['data-testid' => 'mmk-retry']);
+                $actions[] = $this->post('custom', 'action.retry', MessengerMonitorRoutes::RETRY, $params, new Confirm(MonitorPages::label('confirm.retry_title'), MonitorPages::label($duplicateRisk ? 'confirm.retry_duplicate' : 'confirm.retry', ['%transport%' => $target]), MonitorPages::label('action.retry'), $duplicateRisk ? 'danger' : 'primary'), 'primary', ['data-testid' => 'mmk-retry']);
             }
-            $actions[] = $this->post('delete', 'action.remove', MessengerMonitorRoutes::REMOVE, $params, self::ACTION_CSRF_ID, new Confirm(MonitorPages::label('confirm.remove_title'), MonitorPages::label('confirm.remove'), MonitorPages::label('action.remove')), 'danger', ['data-testid' => 'mmk-remove']);
+            $actions[] = $this->post('delete', 'action.remove', MessengerMonitorRoutes::REMOVE, $params, new Confirm(MonitorPages::label('confirm.remove_title'), MonitorPages::label('confirm.remove'), MonitorPages::label('action.remove')), 'danger', ['data-testid' => 'mmk-remove']);
         }
 
         $stamps = [];
@@ -524,24 +526,22 @@ final readonly class MonitorPageFactory
     }
 
     /**
-     * POST action with a FormKit CSRF-only form and a confirm dialog.
+     * POST action with its scoped CSRF form ({@see ActionForms}) and a confirm dialog.
      *
      * @param array<string, string> $params
      * @param array<string, string> $attributes
      */
-    private function post(string $kind, string $label, string $route, array $params, string $csrfId, Confirm $confirm, string $variant, array $attributes): Action
+    private function post(string $kind, string $label, string $route, array $params, Confirm $confirm, string $variant, array $attributes): Action
     {
-        $url = $this->urls->generate($route, $params);
-
         return new Action(
             kind: $kind,
             label: MonitorPages::label($label),
-            href: $url,
+            href: $this->urls->generate($route, $params),
             method: 'POST',
             confirm: $confirm,
             variant: $variant,
             attributes: $attributes,
-            form: $this->csrfForms->createNamed($url, $csrfId)->createView(),
+            form: $this->actionForms->create($route, $params)->createView(),
         );
     }
 }

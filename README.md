@@ -59,6 +59,9 @@ security:
         - { path: ^/admin/messenger, roles: ROLE_ADMIN }
 ```
 
+Add that line to your own `access_control` list: the Flex recipe deliberately ships no security file (a second
+`access_control` definition would replace yours, not merge with it).
+
 Create the history table with a migration (`doctrine:migrations:diff`). Details: [docs/INSTALLATION.md](docs/INSTALLATION.md).
 
 ## Quick start

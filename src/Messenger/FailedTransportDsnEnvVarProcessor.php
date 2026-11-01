@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Nowo\MessengerMonitorKitBundle\Messenger;
 
 use Closure;
+use SensitiveParameter;
 use Symfony\Component\DependencyInjection\EnvVarProcessorInterface;
 use Symfony\Component\DependencyInjection\Exception\EnvNotFoundException;
 
@@ -65,7 +66,7 @@ final readonly class FailedTransportDsnEnvVarProcessor implements EnvVarProcesso
     /**
      * `redis://:pass@host:6379/1?timeout=2` → `redis://:pass@host:6379?timeout=2&dbindex=1`.
      */
-    public static function messengerRedisDsn(string $redisUrl): string
+    public static function messengerRedisDsn(#[SensitiveParameter] string $redisUrl): string
     {
         if (preg_match('~^(rediss?://[^/?#]*)(?:/(\d*))?/?(?:\?([^#]*))?$~i', $redisUrl, $m) !== 1) {
             return $redisUrl;

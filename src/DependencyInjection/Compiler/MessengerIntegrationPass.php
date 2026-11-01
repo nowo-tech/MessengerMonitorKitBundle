@@ -5,12 +5,15 @@ declare(strict_types=1);
 namespace Nowo\MessengerMonitorKitBundle\DependencyInjection\Compiler;
 
 use LogicException;
+use Nowo\MessengerMonitorKitBundle\Retry\FailedMessageRetrier;
 use Nowo\MessengerMonitorKitBundle\Retry\NoRetryOnDecodingFailureRetryStrategy;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
 
+use function array_unique;
+use function array_values;
 use function is_array;
 use function is_string;
 use function sprintf;
@@ -22,7 +25,10 @@ use function sprintf;
  *   with {@see NoRetryOnDecodingFailureRetryStrategy} (an unknown transport, or one with a custom retry strategy
  *   service, fails the build with a clear message);
  * - `transport_factories.*`: checks that the wrapped Symfony factory exists (symfony/amqp-messenger,
- *   symfony/doctrine-messenger).
+ *   symfony/doctrine-messenger);
+ * - `failure_transports` left empty: filled with the receivers Symfony tags `is_failure_transport`
+ *   (`framework.messenger.failure_transport` and per-transport `failure_transport`), so the name heuristic of
+ *   {@see FailedMessageRetrier::isFailureTransport()} is only a last resort.
  */
 final class MessengerIntegrationPass implements CompilerPassInterface
 {
@@ -53,5 +59,27 @@ final class MessengerIntegrationPass implements CompilerPassInterface
                 throw new LogicException(sprintf('nowo_messenger_monitor_kit.transport_factories.%s needs the "%s" service (composer require symfony/%s-messenger).', (string) $factory, (string) $inner, (string) $factory));
             }
         }
+
+        $this->deriveFailureTransports($container);
+    }
+
+    private function deriveFailureTransports(ContainerBuilder $container): void
+    {
+        if (!$container->hasDefinition(FailedMessageRetrier::class)) {
+            return;
+        }
+        $retrier = $container->getDefinition(FailedMessageRetrier::class);
+        if ($retrier->getArgument(2) !== []) {
+            return;
+        }
+        $names = [];
+        foreach ($container->findTaggedServiceIds('messenger.receiver') as $tags) {
+            foreach ($tags as $tag) {
+                if (($tag['is_failure_transport'] ?? false) === true && is_string($tag['alias'] ?? null)) {
+                    $names[] = $tag['alias'];
+                }
+            }
+        }
+        $retrier->replaceArgument(2, array_values(array_unique($names)));
     }
 }

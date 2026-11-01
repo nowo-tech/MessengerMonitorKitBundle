@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Nowo\MessengerMonitorKitBundle\Controller;
 
-use Nowo\FormKitBundle\Form\CsrfOnlyFormFactory;
 use Nowo\MessengerMonitorKitBundle\Event\MessengerMonitorActionEvent;
 use Nowo\MessengerMonitorKitBundle\NowoMessengerMonitorKitBundle;
 use Nowo\MessengerMonitorKitBundle\Security\AccessGuard;
 use Nowo\MessengerMonitorKitBundle\Security\MessengerMonitorAccessCheckerInterface;
+use Nowo\MessengerMonitorKitBundle\Ui\ActionForms;
 use Nowo\MessengerMonitorKitBundle\Ui\MonitorPageFactory;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -18,7 +18,7 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
  * Shared plumbing of the admin controllers: access areas, fail-closed CSRF of the POST actions (FormKit CSRF-only
- * forms), audit events and translated flashes. The view area is also enforced by the request listener for every
+ * forms scoped to the action and its target), audit events and translated flashes. The view area is also enforced by the request listener for every
  * bundle controller; mutations additionally require the manage area here.
  */
 abstract class AbstractMonitorController extends AbstractController
@@ -26,14 +26,14 @@ abstract class AbstractMonitorController extends AbstractController
     /**
      * @param AccessGuard $guard access checker of the current user
      * @param MonitorPageFactory $pages view models
-     * @param CsrfOnlyFormFactory $csrfForms CSRF-only forms of the POST actions
+     * @param ActionForms $actionForms scoped CSRF forms of the failure transport actions
      * @param EventDispatcherInterface|null $events dispatcher of {@see MessengerMonitorActionEvent}
      * @param TranslatorInterface|null $translator flash messages
      */
     public function __construct(
         protected readonly AccessGuard $guard,
         protected readonly MonitorPageFactory $pages,
-        protected readonly CsrfOnlyFormFactory $csrfForms,
+        protected readonly ActionForms $actionForms,
         protected readonly ?EventDispatcherInterface $events = null,
         protected readonly ?TranslatorInterface $translator = null,
     ) {
@@ -56,12 +56,14 @@ abstract class AbstractMonitorController extends AbstractController
     }
 
     /**
-     * Validates the CSRF-only form of a POST action (same action URL and token id as the rendered one); a missing or
-     * invalid token is a 403 (fail closed).
+     * Validates the scoped CSRF form of a POST action (token id bound to the route, the transport and the message id or
+     * "all"); a missing, invalid or other-action token is a 403 (fail closed).
+     *
+     * @param array<string, string> $params route parameters of the action
      */
-    protected function requireCsrf(Request $request, string $action, string $tokenId): void
+    protected function requireCsrf(Request $request, string $route, array $params): void
     {
-        $form = $this->csrfForms->createNamed($action, $tokenId);
+        $form = $this->actionForms->create($route, $params);
         $form->handleRequest($request);
         if (!$form->isSubmitted() || !$form->isValid()) {
             throw new AccessDeniedHttpException('Invalid or missing CSRF token.');

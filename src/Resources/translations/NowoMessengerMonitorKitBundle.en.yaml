@@ -104,7 +104,7 @@ confirm:
     remove_title: Remove this message?
     remove: The failed message is deleted from the failure transport. This cannot be undone.
     retry_all_title: Retry the failed messages?
-    retry_all: Up to %count% failed messages go back to their original transport. Messages without one stay parked.
+    retry_all: 'Up to %count% failed messages go back to their original transport. Messages without one stay parked. Duplicate-risk messages are skipped: retry them one by one.'
     remove_all_title: Remove the failed messages?
     remove_all: Up to %count% failed messages are deleted. This cannot be undone.
 transports:

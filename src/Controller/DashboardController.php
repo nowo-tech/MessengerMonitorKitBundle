@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Nowo\MessengerMonitorKitBundle\Controller;
 
-use Nowo\FormKitBundle\Form\CsrfOnlyFormFactory;
 use Nowo\MessengerMonitorKitBundle\Queue\QueueDepth;
 use Nowo\MessengerMonitorKitBundle\Routing\MessengerMonitorRoutes;
 use Nowo\MessengerMonitorKitBundle\Security\AccessGuard;
 use Nowo\MessengerMonitorKitBundle\Settings\MonitorSettingsStoreInterface;
+use Nowo\MessengerMonitorKitBundle\Ui\ActionForms;
 use Nowo\MessengerMonitorKitBundle\Ui\MonitorPageFactory;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\Response;
@@ -41,11 +41,11 @@ final class DashboardController extends AbstractMonitorController
         private readonly MonitorSettingsStoreInterface $settings,
         AccessGuard $guard,
         MonitorPageFactory $pages,
-        CsrfOnlyFormFactory $csrfForms,
+        ActionForms $actionForms,
         ?EventDispatcherInterface $events = null,
         ?TranslatorInterface $translator = null,
     ) {
-        parent::__construct($guard, $pages, $csrfForms, $events, $translator);
+        parent::__construct($guard, $pages, $actionForms, $events, $translator);
     }
 
     /**

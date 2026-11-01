@@ -276,17 +276,19 @@ final class Configuration implements ConfigurationInterface
                 ->integerNode('max_depth')->defaultValue(4)->min(1)->max(10)->end()
                 ->integerNode('max_items')->info('Items shown per array / object.')->defaultValue(50)->min(1)->max(500)->end()
                 ->integerNode('max_string_length')->defaultValue(500)->min(16)->max(10_000)->end()
+                ->integerNode('max_nodes')->info('Values normalised in the whole message graph (CPU / memory budget).')->defaultValue(2000)->min(10)->max(100_000)->end()
+                ->integerNode('max_bytes')->info('Bytes of JSON shown per payload / result; the rest is cut.')->defaultValue(262_144)->min(1024)->max(16_777_216)->end()
             ->end();
     }
 
     private function addRedaction(ArrayNodeDefinition $node): void
     {
         $node
-            ->info('Redaction of payloads, handler results and failure messages shown in the UI (personal data / secrets).')
+            ->info('Redaction of payloads, handler results, failure messages and descriptions shown in the UI (personal data / secrets); credentials in free text are always masked.')
             ->addDefaultsIfNotSet()
             ->children()
                 ->arrayNode('keys')
-                    ->info('Property / key names whose value is masked (case-insensitive, "_" and "-" ignored). Replaces the default list.')
+                    ->info('Property / key names whose value is masked (case-insensitive, "_", "-", "." ignored; matched inside a name, or as the whole name for 2-letter keys and keys written "=name"). Replaces the default list.')
                     ->scalarPrototype()->cannotBeEmpty()->end()
                     ->defaultValue(KeyPatternRedactor::DEFAULT_KEYS)
                 ->end()
@@ -296,7 +298,7 @@ final class Configuration implements ConfigurationInterface
                 ->end()
                 ->scalarNode('mask')->defaultValue(KeyPatternRedactor::DEFAULT_MASK)->cannotBeEmpty()->end()
                 ->booleanNode('mask_emails')->info('Mask e-mail addresses inside any string value.')->defaultTrue()->end()
-                ->booleanNode('mask_long_numbers')->info('Mask runs of 9+ digits (phones, cards, accounts) inside any string value.')->defaultTrue()->end()
+                ->booleanNode('mask_long_numbers')->info('Mask Spanish DNI / NIE and runs of 9+ digits (phones, cards, accounts) inside any string value.')->defaultTrue()->end()
             ->end();
     }
 

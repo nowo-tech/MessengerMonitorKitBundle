@@ -141,7 +141,7 @@ An operator opens the dashboard and the history.
   are denied.
 - **FR-SEC-002**: A request listener guards the prefix and every bundle controller; tokens are trusted only with a
   firewall context of the main request.
-- **FR-SEC-003**: Every mutation validates a CSRF form (fail closed); the UI refuses to compile without form CSRF.
+- **FR-SEC-003**: Every mutation validates a CSRF form (fail closed), with one token id per action and target; the UI refuses to compile without form CSRF.
 - **FR-SEC-004**: `allow_unauthenticated` is accepted only with `kernel.debug`.
 
 ### Admin UI
@@ -169,7 +169,7 @@ An operator opens the dashboard and the history.
 - **SC-002**: PHPStan level 8 with FrankenPHP rulesets, Rector dry-run, PHP-CS-Fixer and Igor are clean.
 - **SC-003**: The UiKit page contract test passes for every page and fixture; no fixture personal data reaches the HTML.
 - **SC-004**: The demo e2e suite passes (dashboard, history filter, redacted payload, retry, settings).
-- **SC-005**: The code inventory maps **78/78** files under `src/`.
+- **SC-005**: The code inventory maps **79/79** files under `src/`.
 
 ## Non-goals
 

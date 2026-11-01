@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Nowo\MessengerMonitorKitBundle\Controller;
 
-use Nowo\FormKitBundle\Form\CsrfOnlyFormFactory;
 use Nowo\FormKitBundle\Form\GetFilterFormFactory;
 use Nowo\MessengerMonitorKitBundle\DependencyInjection\Configuration;
 use Nowo\MessengerMonitorKitBundle\Form\HistoryFilterType;
@@ -12,6 +11,7 @@ use Nowo\MessengerMonitorKitBundle\Payload\PayloadView;
 use Nowo\MessengerMonitorKitBundle\Payload\Redactor;
 use Nowo\MessengerMonitorKitBundle\Routing\MessengerMonitorRoutes;
 use Nowo\MessengerMonitorKitBundle\Security\AccessGuard;
+use Nowo\MessengerMonitorKitBundle\Ui\ActionForms;
 use Nowo\MessengerMonitorKitBundle\Ui\MonitorPageFactory;
 use Nowo\UiKitBundle\Listing\SortRequest;
 use Nowo\UiKitBundle\View\Pagination;
@@ -55,11 +55,11 @@ final class HistoryController extends AbstractMonitorController
         private readonly int $perPage,
         AccessGuard $guard,
         MonitorPageFactory $pages,
-        CsrfOnlyFormFactory $csrfForms,
+        ActionForms $actionForms,
         ?EventDispatcherInterface $events = null,
         ?TranslatorInterface $translator = null,
     ) {
-        parent::__construct($guard, $pages, $csrfForms, $events, $translator);
+        parent::__construct($guard, $pages, $actionForms, $events, $translator);
     }
 
     /**
@@ -114,7 +114,8 @@ final class HistoryController extends AbstractMonitorController
     }
 
     /**
-     * One history row; the handler results are shown to managers only (redacted).
+     * One history row. Viewers get metadata only; managers also get the failure message, the description and the
+     * handler results, all redacted.
      */
     #[Route('/history/{id}', name: MessengerMonitorRoutes::HISTORY_SHOW, requirements: ['id' => '[A-Za-z0-9_-]{1,64}'], methods: ['GET'])]
     public function show(string $id): Response
@@ -122,8 +123,9 @@ final class HistoryController extends AbstractMonitorController
         $message  = $this->storage->find($id) ?? throw $this->createNotFoundException();
         $attempts = $this->storage->filter(Specification::create(['run_id' => $message->runId(), 'sort' => Specification::ASC]))->take(self::MAX_ATTEMPTS);
 
+        $manage  = $this->canManage();
         $results = null;
-        if ($this->canManage() && $message->results()->count() > 0) {
+        if ($manage && $message->results()->count() > 0) {
             $data = [];
             foreach ($message->results() as $result) {
                 $data[] = ['handler' => (string) $result->handler(), 'failure' => $result->failure()?->class(), 'data' => $result->data()];
@@ -135,8 +137,9 @@ final class HistoryController extends AbstractMonitorController
             $message,
             $attempts,
             $results,
-            $this->redactor->redactText($message->failure()?->description()),
-            $this->canManage(),
+            $manage ? $this->redactor->redactText($message->failure()?->description()) : null,
+            $manage ? $this->redactor->redactText($message->description()) : null,
+            $manage,
         ));
     }
 }

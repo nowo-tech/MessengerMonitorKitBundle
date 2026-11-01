@@ -127,7 +127,8 @@ and point `nowo_ui_kit.layouts.admin` at the host admin layout (see [USAGE.md](U
 ## Flex recipe
 
 The recipe lives in `.symfony/recipe/nowo-tech/messenger-monitor-kit-bundle/1.0/` (REQ-RECIPE-001): it registers the
-bundles and copies `config/packages/nowo_messenger_monitor_kit.yaml`,
-`config/packages/security_nowo_messenger_monitor_kit.yaml` (access control example) and
-`config/routes/nowo_messenger_monitor_kit.yaml`. Its `post-install.txt` lists the migration, the failure transport
+bundles and copies `config/packages/nowo_messenger_monitor_kit.yaml` and `config/routes/nowo_messenger_monitor_kit.yaml`.
+It ships **no security file**: a recipe file defining `security.access_control` would replace the host's own list
+(Symfony does not merge that prototype across files) and silently drop its other rules. Its `post-install.txt` prints
+the `access_control` line to add to `config/packages/security.yaml` (see above), the migration, the failure transport
 and the scheduled purge.

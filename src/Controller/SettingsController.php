@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Nowo\MessengerMonitorKitBundle\Controller;
 
-use Nowo\FormKitBundle\Form\CsrfOnlyFormFactory;
 use Nowo\MessengerMonitorKitBundle\Event\MessengerMonitorActionEvent;
 use Nowo\MessengerMonitorKitBundle\Form\MonitorSettingsType;
 use Nowo\MessengerMonitorKitBundle\Form\PurgeType;
@@ -15,6 +14,7 @@ use Nowo\MessengerMonitorKitBundle\Routing\MessengerMonitorRoutes;
 use Nowo\MessengerMonitorKitBundle\Security\AccessGuard;
 use Nowo\MessengerMonitorKitBundle\Settings\MonitorSettings;
 use Nowo\MessengerMonitorKitBundle\Settings\MonitorSettingsStoreInterface;
+use Nowo\MessengerMonitorKitBundle\Ui\ActionForms;
 use Nowo\MessengerMonitorKitBundle\Ui\MonitorPageFactory;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Form\FormInterface;
@@ -47,11 +47,11 @@ final class SettingsController extends AbstractMonitorController
         private readonly int $maxBatches,
         AccessGuard $guard,
         MonitorPageFactory $pages,
-        CsrfOnlyFormFactory $csrfForms,
+        ActionForms $actionForms,
         ?EventDispatcherInterface $events = null,
         ?TranslatorInterface $translator = null,
     ) {
-        parent::__construct($guard, $pages, $csrfForms, $events, $translator);
+        parent::__construct($guard, $pages, $actionForms, $events, $translator);
     }
 
     /**

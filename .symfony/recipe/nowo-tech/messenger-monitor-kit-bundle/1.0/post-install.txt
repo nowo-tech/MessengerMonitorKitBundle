@@ -2,7 +2,11 @@ Nowo Messenger Monitor Kit Bundle installed (on top of zenstruck/messenger-monit
 
 1. Create the history table with a migration (bundle entity, table messenger_processed_messages):
    php bin/console doctrine:migrations:diff && php bin/console doctrine:migrations:migrate
-2. Protect /admin/messenger with security.access_control (recipe example added) and set a listable failure transport
+2. Protect /admin/messenger in config/packages/security.yaml (the recipe does not touch your security config):
+       security:
+           access_control:
+               - { path: ^/admin/messenger, roles: ROLE_ADMIN }
+   Add it next to your existing access_control rules (order matters), then set a listable failure transport
    (framework.messenger.failure_transport, Doctrine or Redis).
 3. Schedule the automatic purge (cron or Symfony Scheduler, every 15 minutes):
    php bin/console nowo:messenger-monitor:purge --auto

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Nowo\MessengerMonitorKitBundle\DependencyInjection;
 
 use LogicException;
-use Nowo\FormKitBundle\Form\CsrfOnlyFormFactory;
 use Nowo\FormKitBundle\Form\GetFilterFormFactory;
 use Nowo\HealthKitBundle\Probe\HealthProbeInterface;
 use Nowo\InstanceSettingsBundle\Settings\InstanceSettingsInterface;
@@ -52,6 +51,7 @@ use Nowo\MessengerMonitorKitBundle\Settings\MonitorSettings;
 use Nowo\MessengerMonitorKitBundle\Settings\MonitorSettingsStoreInterface;
 use Nowo\MessengerMonitorKitBundle\Settings\SettingsStore;
 use Nowo\MessengerMonitorKitBundle\Twig\MessengerMonitorTwigExtension;
+use Nowo\MessengerMonitorKitBundle\Ui\ActionForms;
 use Nowo\MessengerMonitorKitBundle\Ui\MonitorPageFactory;
 use Nowo\MessengerMonitorKitBundle\Ui\MonitorPages;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
@@ -130,7 +130,7 @@ final class NowoMessengerMonitorKitExtension extends Extension implements Prepen
         $config = $this->processConfiguration(new Configuration(), $configs);
         $this->assertLiteralBooleans($config);
 
-        /** @var array{history: array{bundle_entity: bool}, doctrine: array{table_prefix: string}, recording: array{enabled: bool, optional_message_classes: list<string>, record_optional: bool, check_interval: int, store_results: bool}, settings: array{store: string, cache_pool: string}, retention: array{auto_purge: bool, older_than: string, keep_failed: bool, min_interval: int}, purge: array{batch_size: int, max_batches_per_request: int}, retry: array{batch_limit: int, fallback_transport: string|null, duplicate_risk_classes: list<string>, lock_ttl: float}, failure_transports: list<string>, queue_depth: array{transports: list<string>}, health_probe: array{enabled: bool, name: string, pending_warn_at: int|null, pending_fail_at: int|null, failed_warn_at: int|null, failed_fail_at: int|null, critical: bool}, payload: array{enabled: bool, max_depth: int, max_items: int, max_string_length: int}, redaction: array{keys: list<string>, extra_keys: list<string>, mask: string, mask_emails: bool, mask_long_numbers: bool}, retry_strategy: array{no_retry_on_decoding_failure: list<string>}, transport_factories: array{amqp: array{enabled: bool, prefix: string}, doctrine: array{enabled: bool}, failed_dsn_env: array{enabled: bool, queue_env: string, redis_env: string}}, web_ui: array{enabled: bool, path_prefix: string, layout_template: string|null, templates: array<string, string>, per_page: int, transport_list_limit: int}, security: array{access_roles: list<string>, manage_roles: list<string>|null, access_checker: string|null, allow_unauthenticated: bool}} $config */
+        /** @var array{history: array{bundle_entity: bool}, doctrine: array{table_prefix: string}, recording: array{enabled: bool, optional_message_classes: list<string>, record_optional: bool, check_interval: int, store_results: bool}, settings: array{store: string, cache_pool: string}, retention: array{auto_purge: bool, older_than: string, keep_failed: bool, min_interval: int}, purge: array{batch_size: int, max_batches_per_request: int}, retry: array{batch_limit: int, fallback_transport: string|null, duplicate_risk_classes: list<string>, lock_ttl: float}, failure_transports: list<string>, queue_depth: array{transports: list<string>}, health_probe: array{enabled: bool, name: string, pending_warn_at: int|null, pending_fail_at: int|null, failed_warn_at: int|null, failed_fail_at: int|null, critical: bool}, payload: array{enabled: bool, max_depth: int, max_items: int, max_string_length: int, max_nodes: int, max_bytes: int}, redaction: array{keys: list<string>, extra_keys: list<string>, mask: string, mask_emails: bool, mask_long_numbers: bool}, retry_strategy: array{no_retry_on_decoding_failure: list<string>}, transport_factories: array{amqp: array{enabled: bool, prefix: string}, doctrine: array{enabled: bool}, failed_dsn_env: array{enabled: bool, queue_env: string, redis_env: string}}, web_ui: array{enabled: bool, path_prefix: string, layout_template: string|null, templates: array<string, string>, per_page: int, transport_list_limit: int}, security: array{access_roles: list<string>, manage_roles: list<string>|null, access_checker: string|null, allow_unauthenticated: bool}} $config */
         $webUi = $config['web_ui']['enabled'];
         if ($webUi && !$config['security']['allow_unauthenticated'] && !$this->hasSecurityBundle($container)) {
             throw new LogicException('NowoMessengerMonitorKitBundle: the admin UI requires symfony/security-bundle (or security.allow_unauthenticated: true in dev / demo only).');
@@ -195,7 +195,7 @@ final class NowoMessengerMonitorKitExtension extends Extension implements Prepen
 
     /**
      * @param array{keys: list<string>, extra_keys: list<string>, mask: string, mask_emails: bool, mask_long_numbers: bool} $redaction
-     * @param array{enabled: bool, max_depth: int, max_items: int, max_string_length: int} $payload
+     * @param array{enabled: bool, max_depth: int, max_items: int, max_string_length: int, max_nodes: int, max_bytes: int} $payload
      */
     private function registerRedaction(ContainerBuilder $container, array $redaction, array $payload): void
     {
@@ -209,11 +209,12 @@ final class NowoMessengerMonitorKitExtension extends Extension implements Prepen
             new Reference(KeyPatternRedactor::class),
             new TaggedIteratorArgument(NowoMessengerMonitorKitBundle::PAYLOAD_REDACTOR_TAG),
         ]))->setPublic(true));
-        $container->setDefinition(PayloadNormalizer::class, new Definition(PayloadNormalizer::class, [$payload['max_depth'], $payload['max_items'], $payload['max_string_length']]));
+        $container->setDefinition(PayloadNormalizer::class, new Definition(PayloadNormalizer::class, [$payload['max_depth'], $payload['max_items'], $payload['max_string_length'], $payload['max_nodes']]));
         $container->setDefinition(PayloadView::class, (new Definition(PayloadView::class, [
             new Reference(PayloadNormalizer::class),
             new Reference(Redactor::class),
             $payload['enabled'],
+            $payload['max_bytes'],
         ]))->setPublic(true));
     }
 
@@ -302,6 +303,7 @@ final class NowoMessengerMonitorKitExtension extends Extension implements Prepen
             new Reference('lock.factory', ContainerInterface::NULL_ON_INVALID_REFERENCE),
             $config['retry']['lock_ttl'],
             new Reference('logger', ContainerInterface::NULL_ON_INVALID_REFERENCE),
+            new Reference(Redactor::class),
         ]))->setPublic(true));
         $container->setDefinition(QueueDepth::class, (new Definition(QueueDepth::class, [
             new Reference('zenstruck_messenger_monitor.transports'),
@@ -399,15 +401,15 @@ final class NowoMessengerMonitorKitExtension extends Extension implements Prepen
             $container->setDefinition($type, (new Definition($type))->addTag('form.type'));
         }
 
-        $csrfForms   = 'nowo_messenger_monitor_kit.csrf_form_factory';
+        $actionForms = ActionForms::class;
         $filterForms = 'nowo_messenger_monitor_kit.filter_form_factory';
-        $container->setDefinition($csrfForms, new Definition(CsrfOnlyFormFactory::class, [new Reference('form.factory')]));
+        $container->setDefinition($actionForms, new Definition(ActionForms::class, [new Reference('form.factory'), new Reference('router')]));
         $container->setDefinition($filterForms, new Definition(GetFilterFormFactory::class, [new Reference('form.factory')]));
 
         $container->setDefinition(MonitorPages::class, new Definition(MonitorPages::class, [$webUi['layout_template'], $webUi['templates']]));
         $container->setDefinition(MonitorPageFactory::class, new Definition(MonitorPageFactory::class, [
             new Reference('router'),
-            new Reference($csrfForms),
+            new Reference($actionForms),
             new Reference(MonitorPages::class),
         ]));
 
@@ -420,7 +422,7 @@ final class NowoMessengerMonitorKitExtension extends Extension implements Prepen
         $common  = [
             new Reference(AccessGuard::class),
             new Reference(MonitorPageFactory::class),
-            new Reference($csrfForms),
+            new Reference($actionForms),
             new Reference('event_dispatcher', ContainerInterface::NULL_ON_INVALID_REFERENCE),
             new Reference('translator', ContainerInterface::NULL_ON_INVALID_REFERENCE),
         ];

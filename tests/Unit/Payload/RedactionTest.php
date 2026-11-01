@@ -116,7 +116,7 @@ final class RedactionTest extends TestCase
         self::assertSame('abcde…', $data['text']);
         self::assertArrayNotHasKey('uninitialised', $data);
         self::assertArrayNotHasKey('SKIPPED', $data);
-        self::assertStringStartsWith('(recursion: ', (string) $data['self']);
+        self::assertStringStartsWith('(ref: ', (string) $data['self']);
         self::assertSame([1, 2, 3], $data['list']);
         self::assertSame([1, 2, '…' => '(1 more items)'], (new PayloadNormalizer(3, 2))->normalize([1, 2, 3]));
         self::assertSame('(closure)', $data['closure']);
