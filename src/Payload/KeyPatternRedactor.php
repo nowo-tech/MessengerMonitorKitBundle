@@ -9,15 +9,17 @@ use function in_array;
 use function is_array;
 use function is_int;
 use function is_string;
-use function preg_match;
 use function preg_match_all;
 use function preg_replace;
 use function preg_replace_callback;
+use function preg_split;
 use function str_contains;
 use function str_replace;
 use function str_starts_with;
 use function strlen;
 use function strtolower;
+
+use const PREG_SPLIT_DELIM_CAPTURE;
 
 /**
  * Built-in redactor.
@@ -49,9 +51,9 @@ final readonly class KeyPatternRedactor implements PayloadRedactorInterface
 
     /** Credential patterns (always applied), each replaced with `$1` + mask. */
     private const CREDENTIAL_PATTERNS = [
-        '#([a-z][a-z0-9+.\-]*://)[^/\s@]+(?=@)#i',
+        '#([a-z][a-z0-9+.\-]*://)\S*(?=@[^@\s/]*(?:[/:?\#]|\s|$))#i',
         '#\b((?:bearer|basic)\s+)[A-Za-z0-9\-._~+/]+=*#i',
-        '~\b((?:password|passwd|pwd|pass|passphrase|secret|token|access[_-]?token|api[_-]?key|access[_-]?key|secret[_-]?key|key|auth|otp|dsn)\s*[=:]\s*)(?:"[^"]*"|\'[^\']*\'|[^\s,;&"\']+)~i',
+        '~(?<![A-Za-z0-9])((?:[A-Za-z0-9]+[_-])*(?:password|passwd|pwd|pass|passphrase|secret|token|api[_-]?key|access[_-]?key|key|auth|otp|dsn)\s*[=:]\s*)(?:"[^"]*"|\'[^\']*\'|[^\s,;&"\']+)~i',
         '~()\b(?:[sprk]k_(?:live|test)_[A-Za-z0-9]+|gh[pousr]_[A-Za-z0-9]{10,}|xox[abprs]-[A-Za-z0-9\-]+|AKIA[0-9A-Z]{16}|eyJ[A-Za-z0-9_\-]+\.[A-Za-z0-9_\-]+\.[A-Za-z0-9_\-]*)~',
     ];
 
@@ -65,7 +67,8 @@ final readonly class KeyPatternRedactor implements PayloadRedactorInterface
 
     private const LONG_NUMBER_DIGITS = 9;
 
-    private const ISO_DATE_PATTERN = '/\d{4}-\d{2}-\d{2}/';
+    /** A real ISO date inside a digit run (kept; the rest of the run is tested on its own). */
+    private const ISO_DATE_PATTERN = '/((?<!\d)(?:19|20)\d{2}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])(?!\d))/';
 
     /** Keys shorter than this must match exactly (avoids `to` masking `total`, `ip` masking `zip`). */
     private const EXACT_MATCH_BELOW = 3;
@@ -140,10 +143,25 @@ final readonly class KeyPatternRedactor implements PayloadRedactorInterface
         }
         if ($this->maskLongNumbers) {
             $text = (string) preg_replace(self::NATIONAL_ID_PATTERN, $this->mask, $text);
-            $text = (string) preg_replace_callback(self::LONG_NUMBER_PATTERN, fn (array $m): string => preg_match_all('/\d/', $m[0]) >= self::LONG_NUMBER_DIGITS && preg_match(self::ISO_DATE_PATTERN, $m[0]) !== 1 ? $this->mask : $m[0], $text);
+            $text = (string) preg_replace_callback(self::LONG_NUMBER_PATTERN, fn (array $m): string => $this->maskNumberRun($m[0]), $text);
         }
 
         return $text;
+    }
+
+    /**
+     * Masks the parts of a digit run holding {@see self::LONG_NUMBER_DIGITS}+ digits; real ISO dates inside it are kept
+     * (`2026-11-01 4111 1111 1111 1111` → `2026-11-01 [redacted]`, `2100-0418-45-0200051332` → `[redacted]`).
+     */
+    private function maskNumberRun(string $run): string
+    {
+        $masked = '';
+        foreach ((array) preg_split(self::ISO_DATE_PATTERN, $run, -1, PREG_SPLIT_DELIM_CAPTURE) as $index => $part) {
+            $part = (string) $part;
+            $masked .= $index % 2 === 1 || preg_match_all('/\d/', $part) < self::LONG_NUMBER_DIGITS ? $part : (string) preg_replace('/[+(]*\d.*\d\)?/s', $this->mask, $part);
+        }
+
+        return $masked;
     }
 
     /**

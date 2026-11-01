@@ -47,7 +47,7 @@ Fixes from the independent REQ-SEC-004 audit of the 1.0.0 candidate (Appendix CB
   `token=` / `api_key=` / `key=` / `dsn=`-style pairs, `sk_live_` / `pk_test_` / `ghp_` / `xoxb-` / `AKIA…` keys
   and JWTs.
 - **L1** Every failure-transport action has its own CSRF token id
-  `nowo_mmk.<route>.<transport>.<message id | all>` and form name (`ActionForms`): a retry token for one message can
+  `nowo_mmk|<route>|<transport>|<message id or all>` and form name (`ActionForms`): a retry token for one message can
   no longer remove another message or remove all.
 - **L2** Payload normaliser: global value budget (`payload.max_nodes`, default 2000), JSON byte cap
   (`payload.max_bytes`, default 256 KiB), `(ref: Class)` for an object already shown anywhere in the graph; on PHP
@@ -71,3 +71,9 @@ Fixes from the independent REQ-SEC-004 audit of the 1.0.0 candidate (Appendix CB
 - **I6** A failed retry / removal logs the exception class and its redacted message, not the exception object.
 - **I7** Documented: the HealthKit probe publishes transport names and counts.
 - **I8** Documented: zenstruck stores `failure_message` and `description` unredacted in the history table.
+- **N1** (re-verification) CSRF token id parts are joined with `|`, a character outside the transport-name and id
+  alphabet, so `(failed.high, 5)` and `(failed, high.5)` no longer share a token id.
+- **N2** (re-verification) Free-text redaction false negatives closed: prefixed credential keys (`client_secret=`,
+  `refresh_token=`, `db_password=`, `x_api_key=`) are masked; the ISO-date exemption keeps only real dates and tests
+  the rest of the digit run (`2100-0418-45-0200051332`, `2026-11-01 4111 1111 1111 1111` → `2026-11-01 [redacted]`);
+  URL userinfo is masked up to the last `@` before the host (an unencoded `/` or `@` in the password no longer leaks).

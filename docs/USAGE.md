@@ -63,7 +63,7 @@ Routes under `web_ui.path_prefix` (default `/admin/messenger`), names in `Messen
 A retry:
 
 1. requires the manage area, a valid CSRF token for **this** action and message (token id
-   `nowo_mmk.<route>.<transport>.<id>`, `all` for the batch actions) and a **failure** transport (`failure_transports`,
+   `nowo_mmk|<route>|<transport>|<id>`, `all` for the batch actions) and a **failure** transport (`failure_transports`,
    else Symfony's failure transports, else names holding a `fail` / `failed` / `failure` word) — any other transport
    answers 404;
 2. locks `transport + id` (with `symfony/lock`) and looks the message up again inside the lock — a double submit or a

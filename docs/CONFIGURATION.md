@@ -192,11 +192,11 @@ readiness probe named `health_probe.name`: degraded at `*_warn_at`, error at `*_
 | `redaction.extra_keys` | `[]` | Added to the list. |
 | `redaction.mask` | `[redacted]` | Replacement. |
 | `redaction.mask_emails` | `true` | Masks e-mail addresses inside any string (payloads, handler results, failure messages, descriptions), Unicode (IDN) and dot-less hosts included. |
-| `redaction.mask_long_numbers` | `true` | Masks Spanish DNI / NIE and digit runs holding 9+ digits separated by spaces, `-`, `.`, `/` or parentheses (phones, cards, accounts); ISO dates are kept. |
+| `redaction.mask_long_numbers` | `true` | Masks Spanish DNI / NIE and digit runs holding 9+ digits separated by spaces, `-`, `.`, `/` or parentheses (phones, cards, accounts); real ISO dates inside a run are kept, the rest of the run is still tested. |
 
 Credentials are always masked in free text, whatever the options: URL userinfo (`redis://user:pass@` →
-`redis://[redacted]@`), `Bearer` / `Basic` values, `password=` / `pwd:` / `token=` / `api_key=` / `key=` / `dsn=`
-pairs, `sk_live_` / `pk_test_` / `ghp_` / `xoxb-` / `AKIA…` keys and JWTs.
+`redis://[redacted]@`, up to the last `@` before the host), `Bearer` / `Basic` values, `password=` / `pwd:` / `token=` /
+`api_key=` / `key=` / `dsn=` pairs, also with a prefix (`client_secret=`, `db_password=`), `sk_live_` / `pk_test_` / `ghp_` / `xoxb-` / `AKIA…` keys and JWTs.
 
 Hosts add redactors by implementing `Nowo\MessengerMonitorKitBundle\Payload\PayloadRedactorInterface` (autoconfigured,
 tag `nowo_messenger_monitor_kit.payload_redactor`); they run after the built-in one.

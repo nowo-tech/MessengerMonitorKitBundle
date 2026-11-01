@@ -23,6 +23,9 @@ final readonly class ActionForms
     /** Prefix of every action token id. */
     public const TOKEN_PREFIX = 'nowo_mmk';
 
+    /** Separator of the token id parts (not allowed in transport names nor message ids). */
+    public const SEPARATOR = '|';
+
     /**
      * @param FormFactoryInterface $formFactory Symfony form factory
      * @param UrlGeneratorInterface $urls route URLs (form action)
@@ -34,13 +37,14 @@ final readonly class ActionForms
     }
 
     /**
-     * CSRF token id of an action on a target: `nowo_mmk.<route>.<transport>.<message id|all>`.
+     * CSRF token id of an action on a target: `nowo_mmk|<route>|<transport>|<message id|all>`. The separator is outside
+     * the route alphabet of transport names and ids, so two different targets never share an id.
      *
      * @param array<string, string> $params route parameters (`name`, optional `id`)
      */
     public static function tokenId(string $route, array $params): string
     {
-        return self::TOKEN_PREFIX . '.' . $route . '.' . ($params['name'] ?? '') . '.' . ($params['id'] ?? 'all');
+        return self::TOKEN_PREFIX . self::SEPARATOR . $route . self::SEPARATOR . ($params['name'] ?? '') . self::SEPARATOR . ($params['id'] ?? 'all');
     }
 
     /**

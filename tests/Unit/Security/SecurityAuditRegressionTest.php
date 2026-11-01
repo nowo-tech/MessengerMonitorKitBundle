@@ -65,6 +65,12 @@ final class SecurityAuditRegressionTest extends TestCase
         self::assertStringContainsString('Bearer [redacted]', $redacted);
         self::assertStringContainsString('password=[redacted]', $redacted);
         self::assertSame('monkey=banana', $redactor->redactText('monkey=banana'), 'a word ending in "key" is not a key pair');
+
+        // Re-verification N2: prefixed credential keys and an unencoded "/" in a DSN password.
+        self::assertSame('client_secret=[redacted] refresh_token=[redacted] db_password=[redacted] x_api_key=[redacted] my-token: [redacted]', $redactor->redactText('client_secret=' . self::SECRET . ' refresh_token=abc.def db_password=' . self::SECRET . ' x_api_key=' . self::SECRET . ' my-token: ' . self::SECRET));
+        self::assertSame('dsn redis://[redacted]@redis:6379', $redactor->redactText('dsn redis://user:ab/cd@redis:6379'));
+        self::assertSame('redis://[redacted]@redis', $redactor->redactText('redis://user:p@ss/w@rd@redis'));
+        self::assertSame('see https://example.test/docs/page?x=1', $redactor->redactText('see https://example.test/docs/page?x=1'), 'a URL without userinfo is kept');
     }
 
     /** L3: national ids, numbers with `.` / `/` / parentheses, Unicode e-mails; ISO dates and invoice numbers kept. */
@@ -77,6 +83,13 @@ final class SecurityAuditRegressionTest extends TestCase
         self::assertSame('card [redacted] phone [redacted] iban [redacted]', $redactor->redactText('card 4111.1111.1111.1111 phone (612) 345-678 iban 0049/1500/0512'));
         self::assertSame('[redacted] and [redacted]', $redactor->redactText('josé@ejemplo.es and jane@localhost'));
         self::assertSame('at 2026-11-01 10:00:00 INV-2026-0105', $redactor->redactText('at 2026-11-01 10:00:00 INV-2026-0105'));
+
+        // Re-verification N2: the ISO-date exemption covers the date only, not the whole digit run.
+        self::assertSame('CCC [redacted]', $redactor->redactText('CCC 2100-0418-45-0200051332'));
+        self::assertSame('paid 2026-11-01 [redacted]', $redactor->redactText('paid 2026-11-01 4111 1111 1111 1111'));
+        self::assertSame('[redacted] 2026-11-01', $redactor->redactText('4111 1111 1111 1111 2026-11-01'));
+        self::assertSame('2026-11-01 2026-11-02 12', $redactor->redactText('2026-11-01 2026-11-02 12'));
+        self::assertSame('call [redacted]', $redactor->redactText('call +34 (600) 111 222'));
     }
 
     /** L3: wider default keys; short keys only as the whole name. */
@@ -174,8 +187,10 @@ final class SecurityAuditRegressionTest extends TestCase
             ActionForms::tokenId('remove_all', ['name' => 'failed']),
             ActionForms::tokenId('remove_all', ['name' => 'other']),
         ];
-        self::assertSame('nowo_mmk.retry.failed.1', $ids[0]);
-        self::assertSame('nowo_mmk.remove_all.failed.all', $ids[3]);
+        self::assertSame('nowo_mmk|retry|failed|1', $ids[0]);
+        self::assertSame('nowo_mmk|remove_all|failed|all', $ids[3]);
+        self::assertNotSame(ActionForms::tokenId('retry', ['name' => 'failed.high', 'id' => '5']), ActionForms::tokenId('retry', ['name' => 'failed', 'id' => 'high.5']), 'N1: no separator collision');
+        self::assertNotSame(ActionForms::formName('retry', ['name' => 'failed.high', 'id' => '5']), ActionForms::formName('retry', ['name' => 'failed', 'id' => 'high.5']));
         self::assertCount(5, array_unique($ids));
         self::assertNotSame(ActionForms::formName('retry', ['name' => 'failed', 'id' => '1']), ActionForms::formName('retry', ['name' => 'failed', 'id' => '2']));
     }
