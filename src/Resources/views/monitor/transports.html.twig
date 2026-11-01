@@ -1,0 +1,11 @@
+{#
+  Messenger transports (REQ-UI-003): UiKit list scaffold.
+  Variable: page (View\ListPage from MonitorPageFactory::transports(): name, kind badge, message count, a "messages"
+  row action on listable transports).
+  Data block: nowo_ui_list_row (kind badge).
+#}
+{% extends '@NowoUiKit/page/list.html.twig' %}
+
+{% block nowo_ui_list_row %}
+    {{ include('@NowoMessengerMonitorKitBundle/monitor/_cells.html.twig', {columns: page.columns, row: row, bundle: page.bundle}, false) }}
+{% endblock %}

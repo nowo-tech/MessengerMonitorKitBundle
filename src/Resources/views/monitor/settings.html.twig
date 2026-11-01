@@ -1,0 +1,8 @@
+{#
+  Messenger monitor settings (REQ-UI-003): UiKit settings scaffold with two stacked sections.
+  Variable: page (View\SettingsPage from MonitorPageFactory::settings(): section "switches" (MonitorSettingsType,
+  POST + CSRF; a read-only intro without form with settings.store: config) and section "purge" (PurgeType, POST +
+  CSRF, batched).
+  Data block: nowo_ui_settings_section (`section` in context).
+#}
+{% extends '@NowoUiKit/page/settings.html.twig' %}

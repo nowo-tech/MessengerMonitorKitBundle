@@ -1,0 +1,7 @@
+controllers:
+    resource: ../src/Controller/
+    type: attribute
+
+nowo_messenger_monitor_kit:
+    resource: .
+    type: nowo_messenger_monitor_kit

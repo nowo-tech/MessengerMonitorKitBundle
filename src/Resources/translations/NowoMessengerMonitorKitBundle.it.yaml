@@ -1,0 +1,178 @@
+nav:
+    label: 'Monitor di Messenger'
+    dashboard: Pannello
+    history: Cronologia
+    transports: Trasporti
+    settings: Impostazioni
+dashboard:
+    title: 'Monitor di Messenger'
+    intro: 'Messaggi elaborati nelle ultime 24 ore, code, worker e stato della registrazione.'
+    transports: Trasporti
+    workers: Worker
+    recent_failures: 'Errori recenti'
+    no_workers: 'Nessun worker in esecuzione.'
+    no_failures: 'Nessun messaggio fallito negli ultimi 7 giorni.'
+    kpi:
+        processed: Elaborati
+        last_24h: 'Ultime 24 ore'
+        failed: Falliti
+        wait: 'Tempo di attesa'
+        handling: 'Tempo di elaborazione'
+        average: 'Media, ultime 24 ore'
+        pending: 'In attesa'
+        queues: 'Messaggi in attesa nelle code'
+        parked: 'Messaggi falliti'
+        failure_transports: 'Parcheggiati sui trasporti di errore'
+        workers: Worker
+        recording_on: 'Registrazione attiva'
+        recording_off: 'Registrazione disattivata'
+        no_retention: 'Nessuna pulizia automatica'
+worker:
+    status: Stato
+    transports: Trasporti
+    handled: Elaborati
+    memory: Memoria
+    uptime: 'In esecuzione da'
+history:
+    title: 'Cronologia dei messaggi'
+    intro: 'Ogni messaggio elaborato o fallito registrato mentre la registrazione è attiva.'
+    empty_title: 'Nessun messaggio'
+    empty: 'Nessun messaggio corrisponde a questi filtri.'
+    show_intro: 'Messaggio registrato'
+    back: 'Torna alla cronologia'
+    attempts: 'Tentativi di questo messaggio'
+    section:
+        summary: Riepilogo
+        timing: Tempi
+        failure: Errore
+        failure_message: 'Messaggio di errore'
+        results: 'Risultati degli handler'
+    filter:
+        period: Periodo
+        status: Stato
+        transport: Trasporto
+        type: 'Tipo di messaggio'
+        per_page: 'Per pagina'
+        any: Qualsiasi
+    period:
+        in-last-hour: 'Ultima ora'
+        in-last-day: 'Ultime 24 ore'
+        in-last-week: 'Ultimi 7 giorni'
+        in-last-month: 'Ultimo mese'
+        today: Oggi
+        yesterday: Ieri
+        last-week: 'Settimana scorsa'
+        last-month: 'Mese solare scorso'
+        all: Sempre
+status:
+    success: Riuscito
+    failed: Fallito
+kind:
+    queue: Coda
+    failure: 'Trasporto di errore'
+column:
+    id: Id
+    type: Messaggio
+    description: Descrizione
+    status: Stato
+    transport: Trasporto
+    attempt: Tentativo
+    run: Esecuzione
+    tags: Tag
+    dispatched: Inviato
+    received: Ricevuto
+    finished: Terminato
+    wait: Attesa
+    handle: Elaborazione
+    memory: Memoria
+    failure_type: Eccezione
+    error: Errore
+    target: 'Riprova su'
+    kind: Tipo
+    count: Messaggi
+action:
+    view: Vedi
+    messages: Messaggi
+    retry: Riprova
+    remove: Rimuovi
+    retry_all: 'Riprova tutti'
+    remove_all: 'Rimuovi tutti'
+confirm:
+    retry_title: 'Riprovare questo messaggio?'
+    retry: 'Il messaggio torna sul trasporto "%transport%" e i suoi worker lo elaborano di nuovo.'
+    retry_duplicate: 'I suoi handler potrebbero aver già svolto parte del lavoro (e-mail, notifiche, pagamenti). Riprovare può ripetere quegli effetti. Torna su "%transport%".'
+    remove_title: 'Rimuovere questo messaggio?'
+    remove: "Il messaggio fallito viene eliminato dal trasporto di errore. L'operazione è irreversibile."
+    retry_all_title: 'Riprovare i messaggi falliti?'
+    retry_all: 'Fino a %count% messaggi falliti tornano sul loro trasporto originale. Quelli che non ne hanno uno restano parcheggiati.'
+    remove_all_title: 'Rimuovere i messaggi falliti?'
+    remove_all: "Vengono eliminati fino a %count% messaggi falliti. L'operazione è irreversibile."
+transports:
+    title: Trasporti
+    intro: 'Messaggi in attesa su ogni trasporto. Apri un trasporto per elencarne i messaggi.'
+    empty_title: 'Nessun trasporto'
+    empty: 'Nessun trasporto di Messenger può essere contato.'
+    back: 'Torna ai trasporti'
+transport:
+    title: 'Trasporto "%name%"'
+    intro: 'I primi %limit% messaggi in attesa su questo trasporto.'
+    intro_failure: 'I primi %limit% messaggi parcheggiati su questo trasporto di errore. Riprova rimanda il messaggio al trasporto su cui è fallito.'
+    empty_title: 'Nessun messaggio'
+    empty: 'Questo trasporto non contiene messaggi.'
+message:
+    intro: 'Messaggio in attesa su "%transport%"'
+    back: 'Torna al trasporto'
+    payload_hidden: 'Il contenuto è mostrato solo ai gestori (oppure i contenuti sono disattivati).'
+    section:
+        error: Errore
+        stamps: Timbri
+        error_message: 'Messaggio di errore'
+        payload: 'Contenuto (oscurato)'
+settings:
+    title: 'Impostazioni del monitor di Messenger'
+    intro: 'Interruttori a caldo della cronologia e pulizia delle righe vecchie. Le modifiche si applicano senza un nuovo deploy.'
+    intro_store: "I worker applicano una modifica entro l'intervallo di controllo configurato."
+    intro_readonly: 'Questi interruttori provengono dalla configurazione (settings.store: config): registrazione %recording%, conservazione %retention%.'
+    switches: 'Registrazione e conservazione'
+    save: Salva
+    recording: 'Registra la cronologia'
+    recording_help: 'Disattivato smette di scrivere righe di cronologia; pagine, pulizie e nuovi tentativi continuano a funzionare.'
+    record_optional: 'Registra i messaggi ad alto volume'
+    record_optional_help: 'Registra anche le classi di messaggio configurate come opzionali (recording.optional_message_classes).'
+    auto_purge: 'Pulisci automaticamente'
+    auto_purge_help: 'Il comando di pulizia pianificato elimina le righe più vecchie della conservazione qui sotto.'
+    retention: Conservazione
+    retention_help: 'La pulizia automatica elimina la cronologia più vecchia di questo periodo.'
+    keep_failed: 'Conserva i messaggi falliti'
+    keep_failed_help: 'La pulizia automatica conserva le righe fallite.'
+    section:
+        label: 'Monitor di Messenger'
+        intro: 'Registrazione della cronologia e conservazione del monitor di Messenger.'
+purge:
+    title: 'Pulisci la cronologia'
+    intro: '%count% righe registrate. Ultima pulizia automatica: %last%.'
+    submit: Pulisci
+    older_than: 'Elimina righe'
+    older_than_help: 'Le righe sono eliminate a blocchi; una pulizia molto grande potrebbe dover essere ripetuta.'
+    keep_failed: 'Conserva i messaggi falliti'
+    keep_failed_help: 'Vengono eliminate solo le righe riuscite.'
+period:
+    1-hour: 'Più vecchie di 1 ora'
+    1-day: 'Più vecchie di 1 giorno'
+    1-week: 'Più vecchie di 1 settimana'
+    1-month: 'Più vecchie di 1 mese'
+    3-months: 'Più vecchie di 3 mesi'
+    6-months: 'Più vecchie di 6 mesi'
+    1-year: 'Più vecchie di 1 anno'
+    all: 'Tutte le righe'
+flash:
+    retried: '"%message%" è stato rimandato a "%transport%".'
+    removed: '"%message%" è stato rimosso.'
+    retried_all: '%count% messaggi sono stati rimandati al loro trasporto (%skipped% saltati).'
+    removed_all: '%count% messaggi sono stati rimossi (%skipped% saltati).'
+    not_found: 'Il messaggio non è più sul trasporto di errore.'
+    not_retryable: 'Il messaggio non ha un trasporto originale a cui tornare; resta parcheggiato.'
+    locked: 'Qualcun altro sta gestendo questo messaggio in questo momento; riprova tra poco.'
+    settings_saved: 'Impostazioni salvate.'
+    purged: '%count% righe di cronologia eliminate.'
+    purged_partial: '%count% righe di cronologia eliminate; altre righe corrispondono, pulisci di nuovo o lascia terminare la pulizia automatica.'

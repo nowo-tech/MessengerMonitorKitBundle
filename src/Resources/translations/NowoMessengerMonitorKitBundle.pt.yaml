@@ -1,0 +1,178 @@
+nav:
+    label: 'Monitor do Messenger'
+    dashboard: Painel
+    history: Histórico
+    transports: Transportes
+    settings: Definições
+dashboard:
+    title: 'Monitor do Messenger'
+    intro: 'Mensagens processadas nas últimas 24 horas, filas, workers e estado do registo.'
+    transports: Transportes
+    workers: Workers
+    recent_failures: 'Falhas recentes'
+    no_workers: 'Nenhum worker em execução.'
+    no_failures: 'Nenhuma mensagem falhada nos últimos 7 dias.'
+    kpi:
+        processed: Processadas
+        last_24h: 'Últimas 24 horas'
+        failed: Falhadas
+        wait: 'Tempo de espera'
+        handling: 'Tempo de processamento'
+        average: 'Média, últimas 24 horas'
+        pending: Pendentes
+        queues: 'Mensagens à espera nas filas'
+        parked: 'Mensagens falhadas'
+        failure_transports: 'Estacionadas nos transportes de falhas'
+        workers: Workers
+        recording_on: 'Registo ativado'
+        recording_off: 'Registo desativado'
+        no_retention: 'Sem limpeza automática'
+worker:
+    status: Estado
+    transports: Transportes
+    handled: Processadas
+    memory: Memória
+    uptime: 'Em execução há'
+history:
+    title: 'Histórico de mensagens'
+    intro: 'Cada mensagem processada ou falhada registada enquanto o registo está ativado.'
+    empty_title: 'Sem mensagens'
+    empty: 'Nenhuma mensagem corresponde a estes filtros.'
+    show_intro: 'Mensagem registada'
+    back: 'Voltar ao histórico'
+    attempts: 'Tentativas desta mensagem'
+    section:
+        summary: Resumo
+        timing: Tempos
+        failure: Falha
+        failure_message: 'Mensagem da falha'
+        results: 'Resultados dos handlers'
+    filter:
+        period: Período
+        status: Estado
+        transport: Transporte
+        type: 'Tipo de mensagem'
+        per_page: 'Por página'
+        any: Qualquer
+    period:
+        in-last-hour: 'Última hora'
+        in-last-day: 'Últimas 24 horas'
+        in-last-week: 'Últimos 7 dias'
+        in-last-month: 'Último mês'
+        today: Hoje
+        yesterday: Ontem
+        last-week: 'Semana passada'
+        last-month: 'Mês civil anterior'
+        all: Tudo
+status:
+    success: Concluída
+    failed: Falhada
+kind:
+    queue: Fila
+    failure: 'Transporte de falhas'
+column:
+    id: Id
+    type: Mensagem
+    description: Descrição
+    status: Estado
+    transport: Transporte
+    attempt: Tentativa
+    run: Execução
+    tags: Etiquetas
+    dispatched: Enviada
+    received: Recebida
+    finished: Terminada
+    wait: Espera
+    handle: Processamento
+    memory: Memória
+    failure_type: Exceção
+    error: Erro
+    target: 'Repetir em'
+    kind: Tipo
+    count: Mensagens
+action:
+    view: Ver
+    messages: Mensagens
+    retry: Repetir
+    remove: Remover
+    retry_all: 'Repetir todas'
+    remove_all: 'Remover todas'
+confirm:
+    retry_title: 'Repetir esta mensagem?'
+    retry: 'A mensagem volta ao transporte "%transport%" e os seus workers processam-na de novo.'
+    retry_duplicate: 'Os seus handlers podem já ter feito parte do trabalho (e-mails, notificações, pagamentos). Repetir pode duplicar esses efeitos. Volta a "%transport%".'
+    remove_title: 'Remover esta mensagem?'
+    remove: 'A mensagem falhada é apagada do transporte de falhas. Não é possível desfazer.'
+    retry_all_title: 'Repetir as mensagens falhadas?'
+    retry_all: 'Até %count% mensagens falhadas voltam ao seu transporte original. As que não têm um ficam estacionadas.'
+    remove_all_title: 'Remover as mensagens falhadas?'
+    remove_all: 'São apagadas até %count% mensagens falhadas. Não é possível desfazer.'
+transports:
+    title: Transportes
+    intro: 'Mensagens à espera em cada transporte. Abra um transporte para listar as suas mensagens.'
+    empty_title: 'Sem transportes'
+    empty: 'Nenhum transporte do Messenger pode ser contado.'
+    back: 'Voltar aos transportes'
+transport:
+    title: 'Transporte "%name%"'
+    intro: 'As primeiras %limit% mensagens à espera neste transporte.'
+    intro_failure: 'As primeiras %limit% mensagens estacionadas neste transporte de falhas. Repetir devolve a mensagem ao transporte onde falhou.'
+    empty_title: 'Sem mensagens'
+    empty: 'Este transporte não contém mensagens.'
+message:
+    intro: 'Mensagem à espera em "%transport%"'
+    back: 'Voltar ao transporte'
+    payload_hidden: 'O conteúdo só é mostrado aos gestores (ou os conteúdos estão desativados).'
+    section:
+        error: Erro
+        stamps: Carimbos
+        error_message: 'Mensagem de erro'
+        payload: 'Conteúdo (ocultado)'
+settings:
+    title: 'Definições do monitor do Messenger'
+    intro: 'Interruptores em tempo real do histórico e limpeza de linhas antigas. As alterações aplicam-se sem nova implementação.'
+    intro_store: 'Os workers aplicam uma alteração dentro do intervalo de verificação configurado.'
+    intro_readonly: 'Estes interruptores vêm da configuração (settings.store: config): registo %recording%, retenção %retention%.'
+    switches: 'Registo e retenção'
+    save: Guardar
+    recording: 'Registar histórico'
+    recording_help: 'Desativado deixa de escrever linhas de histórico; as páginas, limpezas e repetições continuam a funcionar.'
+    record_optional: 'Registar mensagens de grande volume'
+    record_optional_help: 'Regista também as classes de mensagem configuradas como opcionais (recording.optional_message_classes).'
+    auto_purge: 'Limpar automaticamente'
+    auto_purge_help: 'O comando de limpeza agendado apaga as linhas mais antigas do que a retenção abaixo.'
+    retention: Retenção
+    retention_help: 'A limpeza automática apaga o histórico mais antigo do que isto.'
+    keep_failed: 'Manter as mensagens falhadas'
+    keep_failed_help: 'A limpeza automática mantém as linhas falhadas.'
+    section:
+        label: 'Monitor do Messenger'
+        intro: 'Registo do histórico e retenção do monitor do Messenger.'
+purge:
+    title: 'Limpar histórico'
+    intro: '%count% linhas registadas. Última limpeza automática: %last%.'
+    submit: Limpar
+    older_than: 'Apagar linhas'
+    older_than_help: 'As linhas são apagadas em lotes; uma limpeza muito grande pode precisar de ser repetida.'
+    keep_failed: 'Manter as mensagens falhadas'
+    keep_failed_help: 'Só são apagadas as linhas concluídas.'
+period:
+    1-hour: 'Mais de 1 hora'
+    1-day: 'Mais de 1 dia'
+    1-week: 'Mais de 1 semana'
+    1-month: 'Mais de 1 mês'
+    3-months: 'Mais de 3 meses'
+    6-months: 'Mais de 6 meses'
+    1-year: 'Mais de 1 ano'
+    all: 'Todas as linhas'
+flash:
+    retried: '"%message%" foi devolvida a "%transport%".'
+    removed: '"%message%" foi removida.'
+    retried_all: '%count% mensagens foram devolvidas ao seu transporte (%skipped% ignoradas).'
+    removed_all: '%count% mensagens foram removidas (%skipped% ignoradas).'
+    not_found: 'A mensagem já não está no transporte de falhas.'
+    not_retryable: 'A mensagem não tem transporte original para onde voltar; fica estacionada.'
+    locked: 'Outra pessoa está a tratar desta mensagem neste momento; tente de novo daqui a pouco.'
+    settings_saved: 'Definições guardadas.'
+    purged: '%count% linhas de histórico apagadas.'
+    purged_partial: '%count% linhas de histórico apagadas; há mais linhas, limpe de novo ou deixe a limpeza automática terminar.'

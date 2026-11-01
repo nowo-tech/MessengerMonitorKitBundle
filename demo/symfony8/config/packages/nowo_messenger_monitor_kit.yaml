@@ -1,0 +1,20 @@
+# Messenger Monitor Kit (demo). Every key: docs/CONFIGURATION.md of the bundle.
+nowo_messenger_monitor_kit:
+    recording:
+        # Page views are high-volume: recorded only while "Record high-volume messages" is on (Settings page).
+        optional_message_classes:
+            - App\Message\TrackPageView
+        check_interval: 5
+    retention:
+        auto_purge: true
+        older_than: 1-week
+    retry:
+        # A retried invoice e-mail may be sent twice: the retry asks for a stronger confirmation.
+        duplicate_risk_classes:
+            - App\Message\SendInvoiceEmail
+    web_ui:
+        path_prefix: /admin/messenger
+    security:
+        # DEMO ONLY (refused without kernel.debug): the demo has no login. A host keeps the default (false), sets
+        # access_roles / manage_roles and protects ^/admin/messenger with security.access_control.
+        allow_unauthenticated: true

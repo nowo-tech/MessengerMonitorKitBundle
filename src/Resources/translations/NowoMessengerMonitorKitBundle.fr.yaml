@@ -1,0 +1,178 @@
+nav:
+    label: 'Moniteur Messenger'
+    dashboard: 'Tableau de bord'
+    history: Historique
+    transports: Transports
+    settings: Paramètres
+dashboard:
+    title: 'Moniteur Messenger'
+    intro: "Messages traités ces dernières 24 heures, files, workers et état de l'enregistrement."
+    transports: Transports
+    workers: Workers
+    recent_failures: 'Échecs récents'
+    no_workers: "Aucun worker en cours d'exécution."
+    no_failures: 'Aucun message en échec ces 7 derniers jours.'
+    kpi:
+        processed: Traités
+        last_24h: 'Dernières 24 heures'
+        failed: 'En échec'
+        wait: "Temps d'attente"
+        handling: 'Temps de traitement'
+        average: 'Moyenne, dernières 24 heures'
+        pending: 'En attente'
+        queues: 'Messages en attente dans les files'
+        parked: 'Messages en échec'
+        failure_transports: "Garés sur les transports d'échec"
+        workers: Workers
+        recording_on: 'Enregistrement activé'
+        recording_off: 'Enregistrement désactivé'
+        no_retention: 'Pas de purge automatique'
+worker:
+    status: Statut
+    transports: Transports
+    handled: Traités
+    memory: Mémoire
+    uptime: 'En marche depuis'
+history:
+    title: 'Historique des messages'
+    intro: "Chaque message traité ou en échec enregistré pendant que l'enregistrement est activé."
+    empty_title: 'Aucun message'
+    empty: 'Aucun message ne correspond à ces filtres.'
+    show_intro: 'Message enregistré'
+    back: "Retour à l'historique"
+    attempts: 'Tentatives de ce message'
+    section:
+        summary: Résumé
+        timing: Durées
+        failure: Échec
+        failure_message: "Message d'échec"
+        results: 'Résultats des handlers'
+    filter:
+        period: Période
+        status: Statut
+        transport: Transport
+        type: 'Type de message'
+        per_page: 'Par page'
+        any: Tous
+    period:
+        in-last-hour: 'Dernière heure'
+        in-last-day: 'Dernières 24 heures'
+        in-last-week: '7 derniers jours'
+        in-last-month: 'Dernier mois'
+        today: "Aujourd'hui"
+        yesterday: Hier
+        last-week: 'Semaine dernière'
+        last-month: 'Mois civil précédent'
+        all: Tout
+status:
+    success: Réussi
+    failed: 'En échec'
+kind:
+    queue: File
+    failure: "Transport d'échec"
+column:
+    id: Id
+    type: Message
+    description: Description
+    status: Statut
+    transport: Transport
+    attempt: Tentative
+    run: Exécution
+    tags: Étiquettes
+    dispatched: Envoyé
+    received: Reçu
+    finished: Terminé
+    wait: Attente
+    handle: Traitement
+    memory: Mémoire
+    failure_type: Exception
+    error: Erreur
+    target: 'Relancer vers'
+    kind: Type
+    count: Messages
+action:
+    view: Voir
+    messages: Messages
+    retry: Relancer
+    remove: Supprimer
+    retry_all: 'Tout relancer'
+    remove_all: 'Tout supprimer'
+confirm:
+    retry_title: 'Relancer ce message ?'
+    retry: 'Le message retourne sur le transport "%transport%" et ses workers le traitent à nouveau.'
+    retry_duplicate: 'Ses handlers ont peut-être déjà fait une partie de leur travail (e-mails, notifications, paiements). Le relancer peut répéter ces effets. Il retourne sur "%transport%".'
+    remove_title: 'Supprimer ce message ?'
+    remove: "Le message en échec est supprimé du transport d'échec. Action irréversible."
+    retry_all_title: 'Relancer les messages en échec ?'
+    retry_all: "Jusqu'à %count% messages en échec retournent sur leur transport d'origine. Ceux qui n'en ont pas restent garés."
+    remove_all_title: 'Supprimer les messages en échec ?'
+    remove_all: "Jusqu'à %count% messages en échec sont supprimés. Action irréversible."
+transports:
+    title: Transports
+    intro: 'Messages en attente sur chaque transport. Ouvrez un transport pour lister ses messages.'
+    empty_title: 'Aucun transport'
+    empty: 'Aucun transport Messenger ne peut être compté.'
+    back: 'Retour aux transports'
+transport:
+    title: 'Transport "%name%"'
+    intro: 'Les %limit% premiers messages en attente sur ce transport.'
+    intro_failure: "Les %limit% premiers messages garés sur ce transport d'échec. Relancer renvoie le message au transport sur lequel il a échoué."
+    empty_title: 'Aucun message'
+    empty: 'Ce transport ne contient aucun message.'
+message:
+    intro: 'Message en attente sur "%transport%"'
+    back: 'Retour au transport'
+    payload_hidden: "Le contenu n'est montré qu'aux gestionnaires (ou les contenus sont désactivés)."
+    section:
+        error: Erreur
+        stamps: Tampons
+        error_message: "Message d'erreur"
+        payload: 'Contenu (masqué)'
+settings:
+    title: 'Paramètres du moniteur Messenger'
+    intro: "Interrupteurs à chaud de l'historique et purge des anciennes lignes. Les changements s'appliquent sans redéploiement."
+    intro_store: "Les workers prennent en compte un changement dans l'intervalle de vérification configuré."
+    intro_readonly: 'Ces interrupteurs viennent de la configuration (settings.store: config) : enregistrement %recording%, rétention %retention%.'
+    switches: 'Enregistrement et rétention'
+    save: Enregistrer
+    recording: "Enregistrer l'historique"
+    recording_help: "Désactivé, plus aucune ligne d'historique n'est écrite ; les pages, purges et relances continuent de fonctionner."
+    record_optional: 'Enregistrer les messages à fort volume'
+    record_optional_help: 'Enregistre aussi les classes de message configurées comme optionnelles (recording.optional_message_classes).'
+    auto_purge: 'Purger automatiquement'
+    auto_purge_help: 'La commande de purge planifiée supprime les lignes plus anciennes que la rétention ci-dessous.'
+    retention: Rétention
+    retention_help: "La purge automatique supprime l'historique plus ancien que cela."
+    keep_failed: 'Conserver les messages en échec'
+    keep_failed_help: 'La purge automatique conserve les lignes en échec.'
+    section:
+        label: 'Moniteur Messenger'
+        intro: "Enregistrement de l'historique et rétention du moniteur Messenger."
+purge:
+    title: "Purger l'historique"
+    intro: '%count% lignes enregistrées. Dernière purge automatique : %last%.'
+    submit: Purger
+    older_than: 'Supprimer les lignes'
+    older_than_help: 'Les lignes sont supprimées par lots ; une très grande purge peut devoir être relancée.'
+    keep_failed: 'Conserver les messages en échec'
+    keep_failed_help: 'Seules les lignes réussies sont supprimées.'
+period:
+    1-hour: "Plus d'1 heure"
+    1-day: "Plus d'1 jour"
+    1-week: "Plus d'1 semaine"
+    1-month: "Plus d'1 mois"
+    3-months: 'Plus de 3 mois'
+    6-months: 'Plus de 6 mois'
+    1-year: "Plus d'1 an"
+    all: 'Toutes les lignes'
+flash:
+    retried: '"%message%" a été renvoyé vers "%transport%".'
+    removed: '"%message%" a été supprimé.'
+    retried_all: '%count% messages ont été renvoyés vers leur transport (%skipped% ignorés).'
+    removed_all: '%count% messages ont été supprimés (%skipped% ignorés).'
+    not_found: "Le message n'est plus sur le transport d'échec."
+    not_retryable: "Le message n'a pas de transport d'origine où retourner ; il reste garé."
+    locked: "Quelqu'un d'autre traite ce message en ce moment ; réessayez dans un instant."
+    settings_saved: 'Paramètres enregistrés.'
+    purged: "%count% lignes d'historique supprimées."
+    purged_partial: "%count% lignes d'historique supprimées ; d'autres lignes correspondent, purgez à nouveau ou laissez la purge automatique terminer."

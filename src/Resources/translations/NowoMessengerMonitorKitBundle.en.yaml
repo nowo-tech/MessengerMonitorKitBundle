@@ -1,0 +1,178 @@
+nav:
+    label: Messenger monitor
+    dashboard: Dashboard
+    history: History
+    transports: Transports
+    settings: Settings
+dashboard:
+    title: Messenger monitor
+    intro: Processed messages of the last 24 hours, queues, workers and recording state.
+    transports: Transports
+    workers: Workers
+    recent_failures: Recent failures
+    no_workers: No worker is running.
+    no_failures: No failed message in the last 7 days.
+    kpi:
+        processed: Processed
+        last_24h: Last 24 hours
+        failed: Failed
+        wait: Wait time
+        handling: Handling time
+        average: Average, last 24 hours
+        pending: Pending
+        queues: Messages waiting in the queues
+        parked: Failed messages
+        failure_transports: Parked on the failure transports
+        workers: Workers
+        recording_on: Recording on
+        recording_off: Recording off
+        no_retention: No automatic purge
+worker:
+    status: Status
+    transports: Transports
+    handled: Handled
+    memory: Memory
+    uptime: Running for
+history:
+    title: Message history
+    intro: Every handled or failed message recorded while recording is on.
+    empty_title: No messages
+    empty: No message matches these filters.
+    show_intro: Recorded message
+    back: Back to the history
+    attempts: Attempts of this message
+    section:
+        summary: Summary
+        timing: Timing
+        failure: Failure
+        failure_message: Failure message
+        results: Handler results
+    filter:
+        period: Period
+        status: Status
+        transport: Transport
+        type: Message type
+        per_page: Per page
+        any: Any
+    period:
+        in-last-hour: Last hour
+        in-last-day: Last 24 hours
+        in-last-week: Last 7 days
+        in-last-month: Last month
+        today: Today
+        yesterday: Yesterday
+        last-week: Last week
+        last-month: Last calendar month
+        all: All time
+status:
+    success: Succeeded
+    failed: Failed
+kind:
+    queue: Queue
+    failure: Failure transport
+column:
+    id: Id
+    type: Message
+    description: Description
+    status: Status
+    transport: Transport
+    attempt: Attempt
+    run: Run
+    tags: Tags
+    dispatched: Dispatched
+    received: Received
+    finished: Finished
+    wait: Wait
+    handle: Handling
+    memory: Memory
+    failure_type: Exception
+    error: Error
+    target: Retry to
+    kind: Kind
+    count: Messages
+action:
+    view: View
+    messages: Messages
+    retry: Retry
+    remove: Remove
+    retry_all: Retry all
+    remove_all: Remove all
+confirm:
+    retry_title: Retry this message?
+    retry: The message goes back to the "%transport%" transport and is handled again by its workers.
+    retry_duplicate: Its handlers may already have done part of their work (e-mails, notifications, payments). Retrying can repeat those side effects. It goes back to "%transport%".
+    remove_title: Remove this message?
+    remove: The failed message is deleted from the failure transport. This cannot be undone.
+    retry_all_title: Retry the failed messages?
+    retry_all: Up to %count% failed messages go back to their original transport. Messages without one stay parked.
+    remove_all_title: Remove the failed messages?
+    remove_all: Up to %count% failed messages are deleted. This cannot be undone.
+transports:
+    title: Transports
+    intro: Messages waiting on every transport. Open a transport to list its messages.
+    empty_title: No transports
+    empty: No Messenger transport can be counted.
+    back: Back to the transports
+transport:
+    title: 'Transport "%name%"'
+    intro: The first %limit% messages waiting on this transport.
+    intro_failure: The first %limit% messages parked on this failure transport. Retry sends a message back to the transport it failed on.
+    empty_title: No messages
+    empty: This transport holds no message.
+message:
+    intro: 'Message waiting on "%transport%"'
+    back: Back to the transport
+    payload_hidden: The payload is shown to managers only (or payloads are disabled).
+    section:
+        error: Error
+        stamps: Stamps
+        error_message: Error message
+        payload: Payload (redacted)
+settings:
+    title: Messenger monitor settings
+    intro: Runtime switches of the history and the purge of old rows. Changes apply without a redeploy.
+    intro_store: Workers pick up a change within the configured check interval.
+    intro_readonly: 'These switches come from the configuration (settings.store: config): recording %recording%, retention %retention%.'
+    switches: Recording and retention
+    save: Save
+    recording: Record history
+    recording_help: Off stops writing history rows; the pages, purges and retries keep working.
+    record_optional: Record high-volume messages
+    record_optional_help: Also record the message classes configured as optional (recording.optional_message_classes).
+    auto_purge: Purge automatically
+    auto_purge_help: The scheduled purge command deletes rows older than the retention below.
+    retention: Retention
+    retention_help: History older than this is deleted by the automatic purge.
+    keep_failed: Keep failed messages
+    keep_failed_help: The automatic purge keeps rows that failed.
+    section:
+        label: Messenger monitor
+        intro: History recording and retention of the Messenger monitor.
+purge:
+    title: Purge history
+    intro: '%count% rows recorded. Last automatic purge: %last%.'
+    submit: Purge
+    older_than: Delete rows
+    older_than_help: Rows are deleted in batches; a very large purge may need to run again.
+    keep_failed: Keep failed messages
+    keep_failed_help: Only successful rows are deleted.
+period:
+    1-hour: Older than 1 hour
+    1-day: Older than 1 day
+    1-week: Older than 1 week
+    1-month: Older than 1 month
+    3-months: Older than 3 months
+    6-months: Older than 6 months
+    1-year: Older than 1 year
+    all: All rows
+flash:
+    retried: '"%message%" was sent back to "%transport%".'
+    removed: '"%message%" was removed.'
+    retried_all: '%count% messages were sent back to their transport (%skipped% skipped).'
+    removed_all: '%count% messages were removed (%skipped% skipped).'
+    not_found: The message is no longer on the failure transport.
+    not_retryable: The message has no original transport to go back to; it stays parked.
+    locked: Someone else is handling this message right now; try again in a moment.
+    settings_saved: Settings saved.
+    purged: '%count% history rows deleted.'
+    purged_partial: '%count% history rows deleted; more rows match, purge again or let the automatic purge finish.'

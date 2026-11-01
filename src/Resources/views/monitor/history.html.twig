@@ -1,0 +1,11 @@
+{#
+  Messenger history list (REQ-UI-003): UiKit list scaffold.
+  Variable: page (View\ListPage from MonitorPageFactory::history(): header + area nav, GET filters (HistoryFilterType,
+  FormKit filter profile), rows of the current page, a "view" row action, pagination, empty state).
+  Data block: nowo_ui_list_row (the status column as a badge; the other cells as printed by the scaffold).
+#}
+{% extends '@NowoUiKit/page/list.html.twig' %}
+
+{% block nowo_ui_list_row %}
+    {{ include('@NowoMessengerMonitorKitBundle/monitor/_cells.html.twig', {columns: page.columns, row: row, bundle: page.bundle}, false) }}
+{% endblock %}

@@ -1,0 +1,24 @@
+{#
+  One queued message (REQ-UI-003): UiKit show scaffold.
+  Variables: page (View\ShowPage from MonitorPageFactory::message(): summary, error and stamps sections, retry /
+  remove header actions on a failure transport for managers), payload (redacted, size-capped JSON of the message,
+  managers only, or null), error (redacted error message or null). Both texts are printed escaped inside <pre>.
+  Data block: nowo_ui_show_after.
+#}
+{% extends '@NowoUiKit/page/show.html.twig' %}
+
+{% block nowo_ui_show_after %}
+    {% set _d = 'NowoMessengerMonitorKitBundle' %}
+    {% if error %}
+        {% set _error %}<pre class="nowo-ui-code-block" data-testid="mmk-error">{{ error }}</pre>{% endset %}
+        {{ include(nowo_ui_partial('card', page.bundle), {title: 'message.section.error_message'|trans({}, _d), body: _error, bundle: page.bundle}, false) }}
+    {% endif %}
+    {% set _payload %}
+        {% if payload is not null %}
+            <pre class="nowo-ui-code-block" data-testid="mmk-payload">{{ payload }}</pre>
+        {% else %}
+            {{ include(nowo_ui_partial('empty', page.bundle), {message: 'message.payload_hidden'|trans({}, _d)}, false) }}
+        {% endif %}
+    {% endset %}
+    {{ include(nowo_ui_partial('card', page.bundle), {title: 'message.section.payload'|trans({}, _d), body: _payload, bundle: page.bundle}, false) }}
+{% endblock %}

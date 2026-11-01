@@ -1,0 +1,5 @@
+# Host firewall rule for the messenger monitor admin UI (REQ-UI-002, layer 1).
+# Adjust the path if you change nowo_messenger_monitor_kit.web_ui.path_prefix.
+security:
+    access_control:
+        - { path: ^/admin/messenger, roles: ROLE_ADMIN }
