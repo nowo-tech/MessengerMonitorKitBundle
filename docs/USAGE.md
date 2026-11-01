@@ -62,8 +62,10 @@ Routes under `web_ui.path_prefix` (default `/admin/messenger`), names in `Messen
 
 A retry:
 
-1. requires the manage area, a valid CSRF token and a **failure** transport (`failure_transports`, else names
-   containing `fail`) — any other transport answers 404;
+1. requires the manage area, a valid CSRF token for **this** action and message (token id
+   `nowo_mmk.<route>.<transport>.<id>`, `all` for the batch actions) and a **failure** transport (`failure_transports`,
+   else Symfony's failure transports, else names holding a `fail` / `failed` / `failure` word) — any other transport
+   answers 404;
 2. locks `transport + id` (with `symfony/lock`) and looks the message up again inside the lock — a double submit or a
    second admin gets "no longer on the failure transport" / "being handled";
 3. sends the envelope back to the transport named by its `SentToFailureTransportStamp` (or `retry.fallback_transport`
@@ -72,6 +74,9 @@ A retry:
 4. keeps the handled stamps (handlers that already succeeded are skipped) and the redelivery counter (the transport
    retry policy is not restarted: a retried message that fails again goes back to the failure transport);
 5. rejects it from the failure transport, logs the action and dispatches a `MessengerMonitorActionEvent`.
+
+"Retry all" retries the first `retry.batch_limit` messages the same way but skips `retry.duplicate_risk_classes`: those
+are retried one by one, after their stronger confirmation.
 
 It never runs the message inline in the admin request. "Retry all" / "remove all" handle the first
 `retry.batch_limit` messages; the flash reports done / skipped counts.
@@ -213,7 +218,8 @@ first.
 
 Every form is a Symfony Form Type rendered with `form_start` / child loop / `form_end` by the UiKit scaffolds
 (REQ-TWIG-003 / REQ-TWIG-005): `HistoryFilterType` (FormKit `AbstractGetFilterType`, GET), `MonitorSettingsType` and
-`PurgeType` (FormKit profile `messenger_monitor_kit`, POST + CSRF), and FormKit `CsrfOnlyType` forms for retry / remove.
+`PurgeType` (FormKit profile `messenger_monitor_kit`, POST + CSRF), and FormKit `CsrfOnlyType` forms for retry / remove
+(`ActionForms`: one form name and CSRF token id per action and target).
 Hosts overriding templates must not reintroduce raw `<form>` / `<input>` markup.
 
 ## Translations

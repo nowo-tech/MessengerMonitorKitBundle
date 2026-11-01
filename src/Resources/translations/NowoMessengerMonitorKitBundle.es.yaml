@@ -104,7 +104,7 @@ confirm:
     remove_title: '¿Eliminar este mensaje?'
     remove: 'El mensaje fallido se borra del transporte de fallos. No se puede deshacer.'
     retry_all_title: '¿Reintentar los mensajes fallidos?'
-    retry_all: 'Hasta %count% mensajes fallidos vuelven a su transporte original. Los que no tienen uno siguen aparcados.'
+    retry_all: 'Hasta %count% mensajes fallidos vuelven a su transporte original. Los que no tienen uno siguen aparcados. Los mensajes con riesgo de duplicado se omiten: reinténtalos uno a uno.'
     remove_all_title: '¿Eliminar los mensajes fallidos?'
     remove_all: 'Se borran hasta %count% mensajes fallidos. No se puede deshacer.'
 transports:

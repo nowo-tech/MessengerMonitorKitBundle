@@ -104,7 +104,7 @@ confirm:
     remove_title: 'Supprimer ce message ?'
     remove: "Le message en échec est supprimé du transport d'échec. Action irréversible."
     retry_all_title: 'Relancer les messages en échec ?'
-    retry_all: "Jusqu'à %count% messages en échec retournent sur leur transport d'origine. Ceux qui n'en ont pas restent garés."
+    retry_all: "Jusqu'à %count% messages en échec retournent sur leur transport d'origine. Ceux qui n'en ont pas restent garés. Les messages à risque de doublon sont ignorés : relancez-les un par un."
     remove_all_title: 'Supprimer les messages en échec ?'
     remove_all: "Jusqu'à %count% messages en échec sont supprimés. Action irréversible."
 transports:

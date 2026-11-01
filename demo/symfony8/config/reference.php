@@ -1614,13 +1614,15 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *         max_depth?: int|Param, // Default: 4
  *         max_items?: int|Param, // Items shown per array / object. // Default: 50
  *         max_string_length?: int|Param, // Default: 500
+ *         max_nodes?: int|Param, // Values normalised in the whole message graph (CPU / memory budget). // Default: 2000
+ *         max_bytes?: int|Param, // Bytes of JSON shown per payload / result; the rest is cut. // Default: 262144
  *     },
- *     redaction?: array{ // Redaction of payloads, handler results and failure messages shown in the UI (personal data / secrets).
+ *     redaction?: array{ // Redaction of payloads, handler results, failure messages and descriptions shown in the UI (personal data / secrets); credentials in free text are always masked.
  *         keys?: list<scalar|Param|null>,
  *         extra_keys?: list<scalar|Param|null>,
  *         mask?: scalar|Param|null, // Default: "[redacted]"
  *         mask_emails?: bool|Param, // Mask e-mail addresses inside any string value. // Default: true
- *         mask_long_numbers?: bool|Param, // Mask runs of 9+ digits (phones, cards, accounts) inside any string value. // Default: true
+ *         mask_long_numbers?: bool|Param, // Mask Spanish DNI / NIE and runs of 9+ digits (phones, cards, accounts) inside any string value. // Default: true
  *     },
  *     retry_strategy?: array{
  *         no_retry_on_decoding_failure?: list<scalar|Param|null>,

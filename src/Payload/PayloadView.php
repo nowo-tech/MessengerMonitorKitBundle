@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Nowo\MessengerMonitorKitBundle\Payload;
 
 use function json_encode;
+use function mb_strcut;
+use function strlen;
 
 use const JSON_INVALID_UTF8_SUBSTITUTE;
 use const JSON_PARTIAL_OUTPUT_ON_ERROR;
@@ -18,13 +20,21 @@ use const JSON_UNESCAPED_UNICODE;
  */
 final readonly class PayloadView
 {
+    /** Default `payload.max_bytes`. */
+    public const DEFAULT_MAX_BYTES = 262_144;
+
+    /** Appended to a JSON cut at the byte budget. */
+    public const TRUNCATED_MARKER = "\n… (truncated)";
+
     /**
      * @param bool $enabled `payload.enabled` (false = {@see render()} returns null)
+     * @param int $maxBytes `payload.max_bytes`: bytes of JSON kept
      */
     public function __construct(
         private PayloadNormalizer $normalizer,
         private Redactor $redactor,
         private bool $enabled = true,
+        private int $maxBytes = self::DEFAULT_MAX_BYTES,
     ) {
     }
 
@@ -63,6 +73,8 @@ final readonly class PayloadView
      */
     private function json(array $data): string
     {
-        return (string) json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE | JSON_PARTIAL_OUTPUT_ON_ERROR);
+        $json = (string) json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE | JSON_PARTIAL_OUTPUT_ON_ERROR);
+
+        return strlen($json) > $this->maxBytes ? mb_strcut($json, 0, $this->maxBytes, 'UTF-8') . self::TRUNCATED_MARKER : $json;
     }
 }

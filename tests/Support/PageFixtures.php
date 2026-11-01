@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Nowo\MessengerMonitorKitBundle\Tests\Support;
 
 use DateTimeImmutable;
-use Nowo\FormKitBundle\Form\CsrfOnlyFormFactory;
 use Nowo\FormKitBundle\Form\GetFilterFormFactory;
 use Nowo\MessengerMonitorKitBundle\Entity\ProcessedMessage;
 use Nowo\MessengerMonitorKitBundle\Form\HistoryFilterType;
@@ -19,6 +18,7 @@ use Nowo\MessengerMonitorKitBundle\Queue\TransportDepth;
 use Nowo\MessengerMonitorKitBundle\Settings\MonitorSettings;
 use Nowo\MessengerMonitorKitBundle\Tests\Fixtures\DemoMessage;
 use Nowo\MessengerMonitorKitBundle\Tests\Fixtures\OptionalMessage;
+use Nowo\MessengerMonitorKitBundle\Ui\ActionForms;
 use Nowo\MessengerMonitorKitBundle\Ui\MonitorPageFactory;
 use Nowo\MessengerMonitorKitBundle\Ui\MonitorPages;
 use Nowo\UiKitBundle\View\Pagination;
@@ -95,7 +95,8 @@ final class PageFixtures
             self::row(2, true),
             [self::row(1, true), self::row(2, true)],
             $manager ? $view->renderData([['handler' => 'App\\Handler', 'data' => ['to' => self::EMAIL, 'id' => 9]]]) : null,
-            (new Redactor())->redactText('Payment refused for ' . self::EMAIL),
+            $manager ? (new Redactor())->redactText('Payment refused for ' . self::EMAIL) : null,
+            $manager ? (new Redactor())->redactText('Order 42 for ' . self::EMAIL) : null,
             $manager,
         );
     }
@@ -126,7 +127,7 @@ final class PageFixtures
         $queued = self::queued('1', 'async');
         $view   = new PayloadView(new PayloadNormalizer(), new Redactor());
 
-        return self::factory()->message('failed', $queued, $manager ? $view->render($queued->envelope()->getMessage()) : null, (new Redactor())->redactText('Payment refused for ' . self::EMAIL), true, $manager, 'async', $duplicateRisk);
+        return self::factory()->message('failed', $queued, $manager ? $view->render($queued->envelope()->getMessage()) : null, $manager ? (new Redactor())->redactText('Payment refused for ' . self::EMAIL) : null, true, $manager, 'async', $duplicateRisk);
     }
 
     /**
@@ -143,7 +144,7 @@ final class PageFixtures
 
     public static function factory(?MonitorPages $pages = null): MonitorPageFactory
     {
-        return new MonitorPageFactory(self::urlGenerator(), new CsrfOnlyFormFactory(FormFactories::factory()), $pages ?? new MonitorPages());
+        return new MonitorPageFactory(self::urlGenerator(), new ActionForms(FormFactories::factory(), self::urlGenerator()), $pages ?? new MonitorPages());
     }
 
     public static function row(int $id, bool $failed = false): ProcessedMessage

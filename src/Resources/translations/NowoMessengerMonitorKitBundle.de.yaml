@@ -104,7 +104,7 @@ confirm:
     remove_title: 'Diese Nachricht entfernen?'
     remove: 'Die fehlgeschlagene Nachricht wird vom Fehler-Transport gelöscht. Dies kann nicht rückgängig gemacht werden.'
     retry_all_title: 'Die fehlgeschlagenen Nachrichten wiederholen?'
-    retry_all: 'Bis zu %count% fehlgeschlagene Nachrichten gehen zurück auf ihren ursprünglichen Transport. Nachrichten ohne einen bleiben geparkt.'
+    retry_all: 'Bis zu %count% fehlgeschlagene Nachrichten gehen zurück auf ihren ursprünglichen Transport. Nachrichten ohne einen bleiben geparkt. Nachrichten mit Duplikatrisiko werden übersprungen: wiederholen Sie sie einzeln.'
     remove_all_title: 'Die fehlgeschlagenen Nachrichten entfernen?'
     remove_all: 'Bis zu %count% fehlgeschlagene Nachrichten werden gelöscht. Dies kann nicht rückgängig gemacht werden.'
 transports:

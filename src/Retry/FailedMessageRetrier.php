@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Nowo\MessengerMonitorKitBundle\Retry;
 
+use Nowo\MessengerMonitorKitBundle\Payload\Redactor;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Lock\LockInterface;
@@ -21,8 +22,8 @@ use Zenstruck\Messenger\Monitor\Transports;
 
 use function in_array;
 use function is_scalar;
+use function preg_match;
 use function sha1;
-use function str_contains;
 
 /**
  * Retries and discards (removes) messages parked on a failure transport.
@@ -44,7 +45,15 @@ final readonly class FailedMessageRetrier
     public const TAGS = ['retry', 'manual'];
 
     /**
-     * @param list<string> $failureTransports configured failure transport names (empty = names containing "fail")
+     * Last-resort failure transport name heuristic: a `fail` / `failed` / `failure(s)` word (`failed`, `async_failed`,
+     * `Failure-queue`), never a word merely starting with it (`mail_failover`).
+     */
+    public const FAILURE_NAME_PATTERN = '/(?:^|[_\-.])fail(?:ed|ures?)?(?:$|[_\-.])/i';
+
+    /**
+     * @param list<string> $failureTransports failure transport names: `failure_transports`, else the receivers Symfony
+     *                                        tags `is_failure_transport` (compiler pass); empty = last-resort heuristic
+     *                                        {@see self::FAILURE_NAME_PATTERN}
      * @param string|null $fallbackTransport target when the original transport is gone / not a queue
      * @param list<string> $duplicateRiskClasses message classes whose retry asks for a stronger confirmation
      * @param float $lockTtl seconds a retry / removal of one message is locked
@@ -58,6 +67,7 @@ final readonly class FailedMessageRetrier
         private ?LockFactory $lockFactory = null,
         private float $lockTtl = 30.0,
         private ?LoggerInterface $logger = null,
+        private Redactor $redactor = new Redactor(),
     ) {
     }
 
@@ -70,7 +80,7 @@ final readonly class FailedMessageRetrier
             return in_array($name, $this->failureTransports, true);
         }
 
-        return str_contains($name, 'fail');
+        return preg_match(self::FAILURE_NAME_PATTERN, $name) === 1;
     }
 
     /**
@@ -136,14 +146,14 @@ final readonly class FailedMessageRetrier
     }
 
     /**
-     * Sends one failed message back to its original transport.
+     * Sends one failed message back to its original transport (`$skipDuplicateRisk`: refuse duplicate-risk messages).
      */
-    public function retry(TransportInfo $failed, string $id): RetryOutcome
+    public function retry(TransportInfo $failed, string $id, bool $skipDuplicateRisk = false): RetryOutcome
     {
-        return $this->locked($failed, $id, function (QueuedMessage $queued) use ($failed): RetryOutcome {
+        return $this->locked($failed, $id, function (QueuedMessage $queued) use ($failed, $skipDuplicateRisk): RetryOutcome {
             $type   = $queued->message()->shortName();
             $target = $this->targetFor($queued);
-            if ($target === null) {
+            if ($target === null || ($skipDuplicateRisk && $this->isDuplicateRisk($queued))) {
                 return new RetryOutcome(RetryStatus::NotRetryable, $type);
             }
 
@@ -176,13 +186,14 @@ final readonly class FailedMessageRetrier
     }
 
     /**
-     * Retries the first `$limit` failed messages.
+     * Retries the first `$limit` failed messages; duplicate-risk messages are skipped (they need their own confirmed
+     * retry, one by one) and counted as not retryable.
      */
     public function retryAll(TransportInfo $failed, int $limit): BatchResult
     {
         $result = new BatchResult();
         foreach ($this->ids($failed, $limit) as $id) {
-            $result = $result->with($this->retry($failed, $id));
+            $result = $result->with($this->retry($failed, $id, skipDuplicateRisk: true));
         }
 
         return $result;
@@ -246,7 +257,7 @@ final readonly class FailedMessageRetrier
 
             return $queued instanceof QueuedMessage ? $action($queued) : new RetryOutcome(RetryStatus::NotFound);
         } catch (Throwable $e) {
-            $this->logger?->error('Messenger monitor: failed message action failed.', ['bundle' => 'messenger_monitor_kit', 'transport' => $failed->name(), 'id' => $id, 'exception' => $e]);
+            $this->logger?->error('Messenger monitor: failed message action failed.', ['bundle' => 'messenger_monitor_kit', 'transport' => $failed->name(), 'id' => $id, 'exception_class' => $e::class, 'exception_message' => $this->redactor->redactText($e->getMessage())]);
 
             throw $e;
         } finally {

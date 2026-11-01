@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Nowo\MessengerMonitorKitBundle\Tests\Integration\Functional;
 
 use Nowo\MessengerMonitorKitBundle\Event\MessengerMonitorActionEvent;
+use Nowo\MessengerMonitorKitBundle\Routing\MessengerMonitorRoutes;
 use Nowo\MessengerMonitorKitBundle\Settings\MonitorSettings;
 use Nowo\MessengerMonitorKitBundle\Settings\MonitorSettingsStoreInterface;
 use Nowo\MessengerMonitorKitBundle\Tests\Fixtures\DemoMessage;
@@ -13,8 +14,13 @@ use Nowo\MessengerMonitorKitBundle\Tests\Integration\Kernel\KernelTestCase;
 use Nowo\MessengerMonitorKitBundle\Tests\Integration\Kernel\MonitorTestKernel;
 use Nowo\MessengerMonitorKitBundle\Tests\Support\ActionRecorder;
 use Nowo\MessengerMonitorKitBundle\Tests\Support\Seeder;
+use Nowo\MessengerMonitorKitBundle\Ui\ActionForms;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
+use Symfony\Component\Messenger\Stamp\SentToFailureTransportStamp;
+use Symfony\Component\Messenger\Stamp\TransportMessageIdStamp;
+use Symfony\Component\Messenger\Transport\Receiver\ListableReceiverInterface;
 use Symfony\Component\Messenger\Transport\Receiver\MessageCountAwareInterface;
+use Symfony\Component\Messenger\Transport\Serialization\PhpSerializer;
 
 use function count;
 
@@ -163,7 +169,7 @@ final class AdminUiTest extends KernelTestCase
         $ops = $this->client($kernel, 'ops');
         $ops->request('GET', self::PREFIX . '/transports/failed');
         self::assertStringContainsString('may already have done part of their work', (string) $ops->getResponse()->getContent());
-        $ops->request('POST', self::PREFIX . '/transports/failed/messages/' . $id . '/retry', ['csrf_only' => ['_token' => 'forged']]);
+        $ops->request('POST', self::PREFIX . '/transports/failed/messages/' . $id . '/retry', [ActionForms::formName(MessengerMonitorRoutes::RETRY, ['name' => 'failed', 'id' => $id]) => ['_token' => 'forged']]);
         self::assertSame(403, $ops->getResponse()->getStatusCode(), 'invalid CSRF');
 
         foreach (['/transports/nope', '/transports/sync', '/transports/failed/messages/999'] as $path) {
@@ -171,11 +177,16 @@ final class AdminUiTest extends KernelTestCase
             self::assertSame(404, $ops->getResponse()->getStatusCode(), $path);
         }
 
-        // A valid token for the async (non-failure) transport action is still a 404.
-        $ops->request('GET', self::PREFIX . '/transports/failed');
-        $token = $ops->getCrawler()->filter('form[action$="/retry-all"] input[name="csrf_only[_token]"]')->attr('value');
-        $ops->request('POST', self::PREFIX . '/transports/async/retry-all', ['csrf_only' => ['_token' => $token]]);
+        // A non-failure transport is a 404 before any token check.
+        $ops->request('POST', self::PREFIX . '/transports/async/retry-all');
         self::assertSame(404, $ops->getResponse()->getStatusCode(), 'bulk actions only target a failure transport');
+        // A retry token of one message cannot remove all (SEC-004 L1).
+        $ops->request('GET', self::PREFIX . '/transports/failed');
+        $field = ActionForms::formName(MessengerMonitorRoutes::RETRY, ['name' => 'failed', 'id' => $id]);
+        $token = $ops->getCrawler()->filter('form[action$="/messages/' . $id . '/retry"] input[name="' . $field . '[_token]"]')->attr('value');
+        $ops->request('POST', self::PREFIX . '/transports/failed/remove-all', [ActionForms::formName(MessengerMonitorRoutes::REMOVE_ALL, ['name' => 'failed']) => ['_token' => $token], $field => ['_token' => $token]]);
+        self::assertSame(403, $ops->getResponse()->getStatusCode());
+        self::assertSame(1, $this->depth($kernel, 'failed'));
     }
 
     public function testBulkActionsAndNonRetryableOutcomes(): void
@@ -214,13 +225,26 @@ final class AdminUiTest extends KernelTestCase
         $kernel = $this->bootKernel();
         $c      = $this->container($kernel);
         $orphan = Seeder::failed($c, new DemoMessage('order-5'), 'removed_transport');
-        Seeder::failed($c);
+        $other  = Seeder::failed($c);
         $client = $this->client($kernel);
 
         $client->request('GET', self::PREFIX . '/transports/failed');
-        // Reuse the CSRF token of a retry form (same token id) on the orphan's retry URL.
-        $token = $client->getCrawler()->filter('form[action*="/retry"] input[name="csrf_only[_token]"]')->last()->attr('value');
-        $client->request('POST', self::PREFIX . '/transports/failed/messages/' . $orphan . '/retry', ['csrf_only' => ['_token' => $token]]);
+        // Another message's retry token is refused on the orphan's retry URL (per-message token id, SEC-004 L1).
+        $field = ActionForms::formName(MessengerMonitorRoutes::RETRY, ['name' => 'failed', 'id' => $other]);
+        $token = $client->getCrawler()->filter('form[action$="/messages/' . $other . '/retry"] input[name="' . $field . '[_token]"]')->attr('value');
+        $client->request('POST', self::PREFIX . '/transports/failed/messages/' . $orphan . '/retry', [ActionForms::formName(MessengerMonitorRoutes::RETRY, ['name' => 'failed', 'id' => $orphan]) => ['_token' => $token]]);
+        self::assertSame(403, $client->getResponse()->getStatusCode());
+
+        // The origin disappears between the page and the submit: the retry is refused, the message stays parked.
+        $client->request('GET', self::PREFIX . '/transports/failed');
+        $form      = $client->getCrawler()->filter('form[action$="/messages/' . $other . '/retry"]')->form();
+        $transport = $this->container($kernel)->get('messenger.transport.failed');
+        self::assertInstanceOf(ListableReceiverInterface::class, $transport);
+        $envelope = $transport->find($other);
+        self::assertNotNull($envelope);
+        $encoded = (new PhpSerializer())->encode($envelope->withoutAll(SentToFailureTransportStamp::class)->withoutAll(TransportMessageIdStamp::class)->with(new SentToFailureTransportStamp('removed_transport')));
+        $this->connection($kernel)->update('messenger_messages', ['body' => $encoded['body']], ['id' => $other]);
+        $client->submit($form);
         $client->followRedirect();
         self::assertStringContainsString('no original transport', (string) $client->getResponse()->getContent());
     }

@@ -54,7 +54,7 @@ nowo_messenger_monitor_kit:
         fallback_transport: null       # target when the original transport is gone
         duplicate_risk_classes: []     # stronger confirmation before a retry
         lock_ttl: 30                   # seconds (needs symfony/lock)
-    failure_transports: []             # empty = names containing "fail"
+    failure_transports: []             # empty = Symfony's failure transports (is_failure_transport)
     queue_depth:
         transports: []                 # empty = every countable transport
     health_probe:
@@ -70,10 +70,16 @@ nowo_messenger_monitor_kit:
         max_depth: 4
         max_items: 50
         max_string_length: 500
+        max_nodes: 2000
+        max_bytes: 262144
     redaction:
-        keys: [password, passwd, secret, token, apikey, authorization, cookie, session, credential, privatekey,
-               signature, iban, cardnumber, cvv, cvc, pin, ssn, email, phone, mobile, address, birth, taxid, vat,
-               passport, ipaddress, to, cc, bcc, from, replyto]
+        keys: [password, passwd, pwd, pass, secret, token, apikey, accesskey, encryptionkey, privatekey, '=key',
+               authorization, auth, jwt, bearer, cookie, session, credential, signature, otp, totp, '=code',
+               verificationcode, dsn, databaseurl, webhookurl, iban, cardnumber, '=pan', cvv, cvc, '=pin', pincode,
+               ssn, dni, nif, '=nie', nienumber, taxid, '=vat', vatid, vatnumber, passport, email, phone, mobile,
+               address, postcode, '=zip', birth, dob, ip, ipaddress, clientip, remoteip, username, '=login', '=name',
+               firstname, lastname, fullname, surname, customername, contactname, holdername, recipient, to, cc, bcc,
+               from, replyto]
         extra_keys: []
         mask: '[redacted]'
         mask_emails: true
@@ -156,7 +162,7 @@ CLI: `nowo:messenger-monitor:purge --older-than=1-month [--include-failed]` (man
 
 | Key | Default | Meaning |
 | --- | --- | --- |
-| `failure_transports` | `[]` | Transports the retry / remove actions accept; empty = names containing `fail` (zenstruck's detection). Every other transport answers 404 to the actions. |
+| `failure_transports` | `[]` | Transports the retry / remove actions accept. Empty = the receivers Symfony tags `is_failure_transport` (`framework.messenger.failure_transport` and per-transport `failure_transport`); only when there is none, names holding a `fail` / `failed` / `failure` word (`async_failed`, not `mail_failover`). Prefer listing them explicitly. Every other transport answers 404 to the actions. |
 | `retry.fallback_transport` | `null` | Target when the original transport no longer exists or is not a queue (scheduler, sync). `null` keeps the message parked ("not retryable"). |
 | `retry.batch_limit` | `50` | Messages handled by "retry all" / "remove all". |
 | `retry.duplicate_risk_classes` | `[]` | Message classes whose handlers may have partially run (e-mails, notifications, payments): their retry confirm warns about repeated side effects. |
@@ -179,12 +185,18 @@ readiness probe named `health_probe.name`: degraded at `*_warn_at`, error at `*_
 | Key | Default | Meaning |
 | --- | --- | --- |
 | `payload.enabled` | `true` | `false` never shows a payload. Payloads are shown to the **manage** area only. |
-| `payload.max_depth` / `max_items` / `max_string_length` | `4` / `50` / `500` | Bounds of the normalised payload (properties read by reflection: no getter or `__toString()` runs). |
-| `redaction.keys` | see reference | Keys whose value is masked, case-insensitive with `_`, `-`, `.` and spaces ignored; keys of 3 characters or fewer match exactly (`to` does not mask `total`), longer ones match inside a name (`email` masks `customerEmail`). Replaces the default list. |
+| `payload.max_depth` / `max_items` / `max_string_length` | `4` / `50` / `500` | Bounds of the normalised payload (properties read by reflection: no getter, `__toString()` or property hook runs; PHP 8.4 virtual properties and uninitialised lazy objects are skipped). |
+| `payload.max_nodes` | `2000` | Values normalised in the whole object graph; the rest shows `(truncated: payload too large)`. An object already shown anywhere in the graph shows `(ref: Class)`. |
+| `payload.max_bytes` | `262144` | Bytes of JSON shown per payload / handler result; longer output is cut and ends with `… (truncated)`. |
+| `redaction.keys` | see reference | Keys whose value is masked, case-insensitive with `_`, `-`, `.` and spaces ignored; keys of 2 characters and keys written `=name` match the whole name only (`to` does not mask `total`, `=name` does not mask `transportName`, `=pin` does not mask `shipping`), the others match inside a name (`email` masks `customerEmail`, `dni` masks `customerDni`). Replaces the default list. |
 | `redaction.extra_keys` | `[]` | Added to the list. |
 | `redaction.mask` | `[redacted]` | Replacement. |
-| `redaction.mask_emails` | `true` | Masks e-mail addresses inside any string (payloads, handler results, failure messages). |
-| `redaction.mask_long_numbers` | `true` | Masks digit runs (spaces / dashes allowed) holding 9+ digits: phones, cards, accounts. |
+| `redaction.mask_emails` | `true` | Masks e-mail addresses inside any string (payloads, handler results, failure messages, descriptions), Unicode (IDN) and dot-less hosts included. |
+| `redaction.mask_long_numbers` | `true` | Masks Spanish DNI / NIE and digit runs holding 9+ digits separated by spaces, `-`, `.`, `/` or parentheses (phones, cards, accounts); ISO dates are kept. |
+
+Credentials are always masked in free text, whatever the options: URL userinfo (`redis://user:pass@` →
+`redis://[redacted]@`), `Bearer` / `Basic` values, `password=` / `pwd:` / `token=` / `api_key=` / `key=` / `dsn=`
+pairs, `sk_live_` / `pk_test_` / `ghp_` / `xoxb-` / `AKIA…` keys and JWTs.
 
 Hosts add redactors by implementing `Nowo\MessengerMonitorKitBundle\Payload\PayloadRedactorInterface` (autoconfigured,
 tag `nowo_messenger_monitor_kit.payload_redactor`); they run after the built-in one.

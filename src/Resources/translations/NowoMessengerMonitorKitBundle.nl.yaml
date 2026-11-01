@@ -104,7 +104,7 @@ confirm:
     remove_title: 'Dit bericht verwijderen?'
     remove: 'Het mislukte bericht wordt van het fouttransport verwijderd. Dit kan niet ongedaan worden gemaakt.'
     retry_all_title: 'De mislukte berichten opnieuw proberen?'
-    retry_all: 'Tot %count% mislukte berichten gaan terug naar hun oorspronkelijke transport. Berichten zonder blijven geparkeerd.'
+    retry_all: 'Tot %count% mislukte berichten gaan terug naar hun oorspronkelijke transport. Berichten zonder blijven geparkeerd. Berichten met duplicatierisico worden overgeslagen: probeer ze één voor één opnieuw.'
     remove_all_title: 'De mislukte berichten verwijderen?'
     remove_all: 'Tot %count% mislukte berichten worden verwijderd. Dit kan niet ongedaan worden gemaakt.'
 transports:

@@ -104,7 +104,7 @@ confirm:
     remove_title: 'Remover esta mensagem?'
     remove: 'A mensagem falhada é apagada do transporte de falhas. Não é possível desfazer.'
     retry_all_title: 'Repetir as mensagens falhadas?'
-    retry_all: 'Até %count% mensagens falhadas voltam ao seu transporte original. As que não têm um ficam estacionadas.'
+    retry_all: 'Até %count% mensagens falhadas voltam ao seu transporte original. As que não têm um ficam estacionadas. As mensagens com risco de duplicação são ignoradas: repita-as uma a uma.'
     remove_all_title: 'Remover as mensagens falhadas?'
     remove_all: 'São apagadas até %count% mensagens falhadas. Não é possível desfazer.'
 transports:

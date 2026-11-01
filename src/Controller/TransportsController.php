@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Nowo\MessengerMonitorKitBundle\Controller;
 
-use Nowo\FormKitBundle\Form\CsrfOnlyFormFactory;
 use Nowo\MessengerMonitorKitBundle\Event\MessengerMonitorActionEvent;
 use Nowo\MessengerMonitorKitBundle\Payload\PayloadView;
 use Nowo\MessengerMonitorKitBundle\Payload\Redactor;
@@ -15,6 +14,7 @@ use Nowo\MessengerMonitorKitBundle\Retry\RetryOutcome;
 use Nowo\MessengerMonitorKitBundle\Retry\RetryStatus;
 use Nowo\MessengerMonitorKitBundle\Routing\MessengerMonitorRoutes;
 use Nowo\MessengerMonitorKitBundle\Security\AccessGuard;
+use Nowo\MessengerMonitorKitBundle\Ui\ActionForms;
 use Nowo\MessengerMonitorKitBundle\Ui\MonitorPageFactory;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -56,11 +56,11 @@ final class TransportsController extends AbstractMonitorController
         private readonly int $batchLimit,
         AccessGuard $guard,
         MonitorPageFactory $pages,
-        CsrfOnlyFormFactory $csrfForms,
+        ActionForms $actionForms,
         ?EventDispatcherInterface $events = null,
         ?TranslatorInterface $translator = null,
     ) {
-        parent::__construct($guard, $pages, $csrfForms, $events, $translator);
+        parent::__construct($guard, $pages, $actionForms, $events, $translator);
     }
 
     /**
@@ -101,7 +101,7 @@ final class TransportsController extends AbstractMonitorController
     }
 
     /**
-     * One queued message; the payload is shown to managers only, redacted and escaped.
+     * One queued message. Viewers get metadata only; the error message and the payload are shown to managers only, redacted and escaped.
      */
     #[Route('/transports/{name}/messages/{id}', name: MessengerMonitorRoutes::MESSAGE, requirements: ['name' => self::NAME_REQUIREMENT, 'id' => self::ID_REQUIREMENT], methods: ['GET'])]
     public function message(string $name, string $id): Response
@@ -114,7 +114,7 @@ final class TransportsController extends AbstractMonitorController
             $name,
             $queued,
             $manage ? $this->payloadView->render($queued->envelope()->getMessage()) : null,
-            $this->redactor->redactText($queued->exception()?->description()),
+            $manage ? $this->redactor->redactText($queued->exception()?->description()) : null,
             $failure,
             $manage,
             $failure ? $this->retrier->targetFor($queued) : null,
@@ -128,7 +128,7 @@ final class TransportsController extends AbstractMonitorController
     #[Route('/transports/{name}/messages/{id}/retry', name: MessengerMonitorRoutes::RETRY, requirements: ['name' => self::NAME_REQUIREMENT, 'id' => self::ID_REQUIREMENT], methods: ['POST'])]
     public function retry(Request $request, string $name, string $id): RedirectResponse
     {
-        $failed  = $this->failureAction($request, MessengerMonitorRoutes::RETRY, ['name' => $name, 'id' => $id], MonitorPageFactory::ACTION_CSRF_ID);
+        $failed  = $this->failureAction($request, MessengerMonitorRoutes::RETRY, ['name' => $name, 'id' => $id]);
         $outcome = $this->retrier->retry($failed, $id);
         $this->single($outcome, MessengerMonitorActionEvent::RETRIED, $name, 'flash.retried');
 
@@ -141,7 +141,7 @@ final class TransportsController extends AbstractMonitorController
     #[Route('/transports/{name}/messages/{id}/remove', name: MessengerMonitorRoutes::REMOVE, requirements: ['name' => self::NAME_REQUIREMENT, 'id' => self::ID_REQUIREMENT], methods: ['POST'])]
     public function remove(Request $request, string $name, string $id): RedirectResponse
     {
-        $failed  = $this->failureAction($request, MessengerMonitorRoutes::REMOVE, ['name' => $name, 'id' => $id], MonitorPageFactory::ACTION_CSRF_ID);
+        $failed  = $this->failureAction($request, MessengerMonitorRoutes::REMOVE, ['name' => $name, 'id' => $id]);
         $outcome = $this->retrier->discard($failed, $id);
         $this->single($outcome, MessengerMonitorActionEvent::REMOVED, $name, 'flash.removed');
 
@@ -154,7 +154,7 @@ final class TransportsController extends AbstractMonitorController
     #[Route('/transports/{name}/retry-all', name: MessengerMonitorRoutes::RETRY_ALL, requirements: ['name' => self::NAME_REQUIREMENT], methods: ['POST'])]
     public function retryAll(Request $request, string $name): RedirectResponse
     {
-        $failed = $this->failureAction($request, MessengerMonitorRoutes::RETRY_ALL, ['name' => $name], MonitorPageFactory::ACTION_CSRF_ID);
+        $failed = $this->failureAction($request, MessengerMonitorRoutes::RETRY_ALL, ['name' => $name]);
         $this->batch($this->retrier->retryAll($failed, $this->batchLimit), MessengerMonitorActionEvent::RETRIED, $name, 'flash.retried_all');
 
         return $this->redirectToRoute(MessengerMonitorRoutes::TRANSPORT, ['name' => $name]);
@@ -166,23 +166,24 @@ final class TransportsController extends AbstractMonitorController
     #[Route('/transports/{name}/remove-all', name: MessengerMonitorRoutes::REMOVE_ALL, requirements: ['name' => self::NAME_REQUIREMENT], methods: ['POST'])]
     public function removeAll(Request $request, string $name): RedirectResponse
     {
-        $failed = $this->failureAction($request, MessengerMonitorRoutes::REMOVE_ALL, ['name' => $name], MonitorPageFactory::ACTION_CSRF_ID);
+        $failed = $this->failureAction($request, MessengerMonitorRoutes::REMOVE_ALL, ['name' => $name]);
         $this->batch($this->retrier->discardAll($failed, $this->batchLimit), MessengerMonitorActionEvent::REMOVED, $name, 'flash.removed_all');
 
         return $this->redirectToRoute(MessengerMonitorRoutes::TRANSPORT, ['name' => $name]);
     }
 
     /**
-     * Manage area, CSRF of the action form, then the failure transport (404 for any other transport).
+     * Manage area, the failure transport (404 for any other transport), then the CSRF token of this action and target.
      *
      * @param array<string, string> $params
      */
-    private function failureAction(Request $request, string $route, array $params, string $tokenId): TransportInfo
+    private function failureAction(Request $request, string $route, array $params): TransportInfo
     {
         $this->requireManage();
-        $this->requireCsrf($request, $this->generateUrl($route, $params), $tokenId);
+        $failed = $this->retrier->failureTransport($params['name']) ?? throw $this->createNotFoundException();
+        $this->requireCsrf($request, $route, $params);
 
-        return $this->retrier->failureTransport($params['name']) ?? throw $this->createNotFoundException();
+        return $failed;
     }
 
     private function listable(string $name): TransportInfo
