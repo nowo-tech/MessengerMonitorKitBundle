@@ -3,6 +3,7 @@
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [To 1.0.1](#to-101)
 - [To 1.0.0](#to-100)
   - [Requirements](#requirements)
   - [Adopting the kit from an in-app monitor](#adopting-the-kit-from-an-in-app-monitor)
@@ -10,6 +11,14 @@
   - [Breaking changes](#breaking-changes)
 
 ## Unreleased
+
+## To 1.0.1
+
+From **1.0.0**:
+
+```bash
+composer update nowo-tech/messenger-monitor-kit-bundle
+```
 
 The bundle now requires `nowo-tech/ui-kit-bundle` ^2.21. No configuration or code change:
 

@@ -5,6 +5,10 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-11-01
+
+Docs/demo follow-ups: SECURITY audit grades, demo install race, ui-kit ^2.21 See [UPGRADING](UPGRADING.md#to-101).
+
 ### Changed
 
 - Requires `nowo-tech/ui-kit-bundle` ^2.21 (was ^2.20); the lock resolves UiKit 2.21.0.
