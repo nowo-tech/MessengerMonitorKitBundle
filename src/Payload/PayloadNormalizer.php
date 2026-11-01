@@ -162,7 +162,7 @@ final readonly class PayloadNormalizer
      */
     private function isUninitializedLazy(ReflectionClass $reflection, object $object): bool
     {
-        return method_exists($reflection, 'isUninitializedLazyObject') && (bool) $reflection->isUninitializedLazyObject($object);
+        return method_exists($reflection, 'isUninitializedLazyObject') && $reflection->isUninitializedLazyObject($object);
     }
 
     /**
@@ -170,7 +170,7 @@ final readonly class PayloadNormalizer
      */
     private function isVirtual(ReflectionProperty $property): bool
     {
-        return method_exists($property, 'isVirtual') && (bool) $property->isVirtual();
+        return method_exists($property, 'isVirtual') && $property->isVirtual();
     }
 
     /**
