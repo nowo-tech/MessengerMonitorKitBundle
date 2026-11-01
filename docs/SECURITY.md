@@ -116,14 +116,20 @@ fixes are released as patch versions.
 | Cryptography | — (none) |
 | Permissions / exposure | ✅ (two layers, manage area) |
 | Limits / DoS | ✅ |
-| AI security audit passed (REQ-SEC-004) | ⏳ pending independent audit before tagging |
+| AI security audit passed (REQ-SEC-004) | ✅ Appendix CB, re-verification **Pass (good) / Low**; N1 / N2 fixed before the tag — see below |
 
 ## AI security audit (REQ-SEC-004)
 
-Not self-graded: the 1.0.0 candidate needs an independent AI security audit recorded in the monorepo security report
-before the tag. The first audit (Appendix CB, 2026-11-01) found M1, L1–L4 and info items I1–I8; their fixes are listed
-under `Security` in the [CHANGELOG](CHANGELOG.md) and await re-verification. Suggested scope: `src/` (controllers, `FailedMessageRetrier`, `ToggleableMonitorStorage`, redaction,
-`KeysetDeleter`), `src/Resources/views/`, the Flex recipe, the demo `.env.example` and both SECURITY files.
+Independent AI audit, recorded in the monorepo `BUNDLES_SECURITY_ANALYSIS.md` (Appendix CB). The bundle is not
+self-graded.
+
+| Pass | Date | Revision | Grade | Findings | Fixed in |
+| --- | --- | --- | --- | --- | --- |
+| First pass | 2026-11-01 | `72b0489` (PR #1) | **Pass (conditional) / Medium** | M1 view-only users saw unredacted failure texts and descriptions; L1 one CSRF token id for every failure-transport action; L2 payload normaliser without a global budget; L3 redaction coverage gaps; L4 second `access_control` block in the recipe; Info I1–I8 | PR #3 (`2c46e10`), before 1.0.0 |
+| Re-verification | 2026-11-01 | `26e1ab1` (PR #3 head) | **Pass (good) / Low** | M1, L1, L2, L4, I2, I3, I4, I6 fixed; L3 fixed apart from N2. New: N1 (Info) token-id separator collision, N2 (Low) redaction false negatives on prefixed credential keys / ISO dates | N1 and N2 fixed in the same squash `2c46e10`, before the 1.0.0 tag |
+
+I1, I5, I7 and I8 are documented residuals: see [Residual risks and host guidance](#residual-risks-and-host-guidance).
+Fix details are listed under `Security` in the [CHANGELOG](CHANGELOG.md).
 
 ## Residual risks and host guidance
 

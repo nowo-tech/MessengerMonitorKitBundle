@@ -5,12 +5,26 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- Requires `nowo-tech/ui-kit-bundle` ^2.21 (was ^2.20); the lock resolves UiKit 2.21.0.
+
+### Fixed
+
+- Demo: `make up` waits for the entrypoint's first `composer install` (the server answering) before it runs
+  `composer install` again, instead of racing it on the shared `vendor/`.
+- Release notes link UPGRADING with an absolute URL (`release.yml` rewrites relative `UPGRADING.md` links to the tagged
+  file); relative links broke on the GitHub release page.
+
+### Documentation
+
+- SECURITY.md records the AI security audit grades (Appendix CB: first pass Pass (conditional) / Medium,
+  re-verification Pass (good) / Low, N1 / N2 fixed before the 1.0.0 tag) instead of "pending".
+- CHANGELOG / UPGRADING: removed the release-candidate leftovers; README coverage figures refreshed.
+
 ## [1.0.0] - 2026-11-01
 
-First release: admin UI, retry, redaction, purge and queue depth on top of zenstruck/messenger-monitor-bundle See [UPGRADING](UPGRADING.md#to-100).
-
-First release candidate (1.0.0), extracted and generalised from the Symfony Beacon messenger monitor (kit #15 and
-KIT-55), built on top of `zenstruck/messenger-monitor-bundle` ^0.6.
+First release: admin UI, retry, redaction, purge and queue depth on top of zenstruck/messenger-monitor-bundle. See [UPGRADING](https://github.com/nowo-tech/MessengerMonitorKitBundle/blob/main/docs/UPGRADING.md#to-100).
 
 ### Added
 
