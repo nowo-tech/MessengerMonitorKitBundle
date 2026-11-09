@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Nowo\MessengerMonitorKitBundle\Tests\Unit\Settings;
 
 use LogicException;
+use Nowo\InstanceSettingsBundle\File\StoredSettingFile;
 use Nowo\InstanceSettingsBundle\Section\SettingField;
 use Nowo\InstanceSettingsBundle\Settings\InstanceSettingsInterface;
 use Nowo\MessengerMonitorKitBundle\History\PurgePeriod;
@@ -112,6 +113,11 @@ final class SettingsStoresTest extends TestCase
             public function hasSecret(string $key): bool
             {
                 return false;
+            }
+
+            public function getFile(string $key): ?StoredSettingFile
+            {
+                return null;
             }
 
             public function isOverridden(string $key): bool
