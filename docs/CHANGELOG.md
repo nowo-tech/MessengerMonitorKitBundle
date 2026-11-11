@@ -11,10 +11,17 @@ Target 1.1.0 (architecture bar W1: standard Symfony and DDD hosts, rules 4 and 6
 
 - Rule 6: recording the history no longer flushes the host's entity manager. zenstruck's ORM storage did `persist()`
   + `flush()` on the manager that maps the history entity (the host's default one) after every handled and failed
-  message, committing whatever the host had left pending in that manager at that moment (for example changes
-  persisted by a host `WorkerMessageFailedEvent` / `WorkerMessageHandledEvent` listener). History rows are now
-  inserted and deleted with plain DBAL statements built from the entity metadata (`DbalHistoryWriter`), inside a
-  SAVEPOINT when a transaction is open (the original error is rethrown if the insert fails). Affected: 1.0.0 – 1.0.1.
+  message. With DoctrineBundle's worker clear subscriber (priority 0, clears every manager before the history listener
+  at -100) the handler's own pending changes were not affected; what was committed were changes persisted by host
+  `WorkerMessageHandledEvent` / `WorkerMessageFailedEvent` listeners between priorities 0 and -100, or anything
+  pending in hosts without that subscriber. History rows are now inserted and deleted with plain DBAL statements built
+  from the entity metadata (`DbalHistoryWriter`), inside a SAVEPOINT when a transaction is open (the original error is
+  rethrown if the insert fails). Affected: 1.0.0 – 1.0.1.
+- A handler that closed the default entity manager no longer stops the consumer: the history listener threw
+  `EntityManagerClosed` from `WorkerMessageFailedEvent` (the worker loop stopped and the history row was lost). The
+  DBAL writer records the row on the connection.
+- `doctrine.entity_manager` naming the host's default manager (e.g. `default`) only selects it: the bundle never
+  clears or resets the host default, and a single-manager (Flex shorthand) host gets the mapping on it.
 
 ### Added
 

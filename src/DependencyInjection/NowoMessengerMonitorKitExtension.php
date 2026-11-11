@@ -120,6 +120,9 @@ final class NowoMessengerMonitorKitExtension extends Extension implements Prepen
                 $entityManager = $this->configuredEntityManager($container);
                 if ($entityManager === null) {
                     $container->prependExtensionConfig('doctrine', ['orm' => $mappings]);
+                } elseif ($entityManager === 'default' && !$this->hostDeclaresEntityManagers($container)) {
+                    // LH-MMK-L1: Flex shorthand (no entity_managers): its single manager is "default".
+                    $container->prependExtensionConfig('doctrine', ['orm' => $mappings]);
                 } elseif (($hostDefault = $this->hostDefaultEntityManager($container, $entityManager)) !== null) {
                     // A prepended entity_managers entry comes first; pin the host's own default so the bundle manager
                     // never becomes the default one (the host's default_entity_manager, when set, still wins).
@@ -557,6 +560,21 @@ final class NowoMessengerMonitorKitExtension extends Extension implements Prepen
         }
 
         return $name;
+    }
+
+    /**
+     * Whether the host declares `doctrine.orm.entity_managers` (else it uses the single-manager shorthand).
+     */
+    private function hostDeclaresEntityManagers(ContainerBuilder $container): bool
+    {
+        foreach ($container->getExtensionConfig('doctrine') as $config) {
+            $orm = is_array($config['orm'] ?? null) ? $config['orm'] : [];
+            if (is_array($orm['entity_managers'] ?? null) && $orm['entity_managers'] !== []) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

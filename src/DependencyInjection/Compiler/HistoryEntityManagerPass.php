@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Nowo\MessengerMonitorKitBundle\DependencyInjection\Compiler;
 
 use Nowo\MessengerMonitorKitBundle\DependencyInjection\NowoMessengerMonitorKitExtension;
+use Nowo\MessengerMonitorKitBundle\Recording\OwnHistoryManagerSubscriber;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -93,6 +94,12 @@ final readonly class HistoryEntityManagerPass implements CompilerPassInterface
             if ($manager === $name && !$maps) {
                 throw new InvalidConfigurationException(sprintf('The Doctrine entity manager "%s" (nowo_messenger_monitor_kit.doctrine.entity_manager) does not map %s.', $name, self::ENTITY_NAMESPACE));
             }
+        }
+
+        // LH-MMK-M1: only a dedicated manager is the bundle's own (cleared at every boundary, reset when closed); the
+        // host's default manager is never treated as such, even when the option names it.
+        if ($container->hasParameter('doctrine.default_entity_manager') && $container->getParameter('doctrine.default_entity_manager') === $name) {
+            $container->removeDefinition(OwnHistoryManagerSubscriber::class);
         }
     }
 }

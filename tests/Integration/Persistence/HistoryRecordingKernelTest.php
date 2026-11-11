@@ -16,6 +16,7 @@ use Nowo\MessengerMonitorKitBundle\Tests\Fixtures\DemoMessage;
 use Nowo\MessengerMonitorKitBundle\Tests\Fixtures\Host\HostNote;
 use Nowo\MessengerMonitorKitBundle\Tests\Integration\Kernel\KernelTestCase;
 use Nowo\MessengerMonitorKitBundle\Tests\Integration\Kernel\MonitorTestKernel;
+use PHPUnit\Framework\Attributes\DataProvider;
 use RuntimeException;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
@@ -96,6 +97,37 @@ final class HistoryRecordingKernelTest extends KernelTestCase
 
         self::assertSame('default', $registry->getDefaultManagerName());
         self::assertSame($this->manager($kernel, 'monitor'), $registry->getManagerForClass(ProcessedMessage::class));
+    }
+
+    /**
+     * @return iterable<string, array{bool}>
+     */
+    public static function hostDefaultLayouts(): iterable
+    {
+        yield 'flex shorthand' => [false];
+        yield 'declared managers' => [true];
+    }
+
+    #[DataProvider('hostDefaultLayouts')]
+    public function testOptionNamingTheHostDefaultNeverClearsOrResetsIt(bool $declared): void
+    {
+        $orm = $declared
+            ? ['default_entity_manager' => 'default', 'entity_managers' => ['default' => ['connection' => 'default', 'mappings' => self::hostMapping()], 'monitor' => ['connection' => 'default']]]
+            : ['mappings' => self::hostMapping()];
+        $kernel  = $this->bootKernel(['web_ui' => ['enabled' => false], 'doctrine' => ['entity_manager' => 'default']], extensions: ['doctrine' => ['orm' => $orm]]);
+        $default = $this->manager($kernel, 'default');
+        $this->createSchema($default);
+        self::assertSame($default, $this->registry($kernel)->getManagerForClass(ProcessedMessage::class), 'LH-MMK-L1: mapped on the host default');
+        self::assertFalse($this->container($kernel)->has(OwnHistoryManagerSubscriber::class), 'LH-MMK-M1');
+
+        // After DoctrineBundle's worker clear (0) and the history write (-100), before the own-manager clear (-1024).
+        $note = new HostNote('pending host change');
+        $this->dispatcher($kernel)->addListener(WorkerMessageHandledEvent::class, static function () use ($default, $note): void {
+            $default->persist($note);
+        }, -500);
+        $this->dispatcher($kernel)->dispatch(new WorkerMessageHandledEvent($this->envelope(), 'async'));
+        self::assertTrue($default->getUnitOfWork()->isScheduledForInsert($note), 'the host default is not cleared by the bundle');
+        self::assertSame(1, (int) $default->getConnection()->fetchOne('SELECT COUNT(*) FROM messenger_processed_messages'));
     }
 
     public function testUnknownEntityManagerFailsTheBuild(): void
