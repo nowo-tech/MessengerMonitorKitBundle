@@ -119,6 +119,14 @@ final class Configuration implements ConfigurationInterface
                         ->thenInvalid('nowo_messenger_monitor_kit.doctrine.table_prefix must contain only letters, digits and underscores, got %s.')
                     ->end()
                 ->end()
+                ->scalarNode('entity_manager')
+                    ->info('Doctrine entity manager that maps the bundle history entity (1.1). Null (default): the default manager. When set, the entity is mapped on that manager ONLY (removed from the others, auto_mapping included), every read / purge uses it, the bundle clears it at the end of each request / message / command, and the build fails when the manager does not exist. Recording never flushes any manager (DBAL inserts).')
+                    ->defaultNull()
+                    ->validate()
+                        ->ifTrue(static fn (mixed $v): bool => $v !== null && (!is_string($v) || preg_match('/^\w+$/', $v) !== 1))
+                        ->thenInvalid('nowo_messenger_monitor_kit.doctrine.entity_manager must be an entity manager name or null, got %s.')
+                    ->end()
+                ->end()
             ->end();
     }
 

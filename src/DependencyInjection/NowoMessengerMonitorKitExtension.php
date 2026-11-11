@@ -35,6 +35,7 @@ use Nowo\MessengerMonitorKitBundle\Payload\PayloadRedactorInterface;
 use Nowo\MessengerMonitorKitBundle\Payload\PayloadView;
 use Nowo\MessengerMonitorKitBundle\Payload\Redactor;
 use Nowo\MessengerMonitorKitBundle\Queue\QueueDepth;
+use Nowo\MessengerMonitorKitBundle\Recording\OwnHistoryManagerSubscriber;
 use Nowo\MessengerMonitorKitBundle\Recording\RecordingSwitch;
 use Nowo\MessengerMonitorKitBundle\Recording\ToggleableMonitorStorage;
 use Nowo\MessengerMonitorKitBundle\Retry\FailedMessageRetrier;
@@ -65,6 +66,7 @@ use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\HttpKernel\KernelEvents;
 
 use function array_key_exists;
+use function array_key_first;
 use function array_merge;
 use function array_values;
 use function interface_exists;
@@ -81,6 +83,9 @@ use function sprintf;
  */
 final class NowoMessengerMonitorKitExtension extends Extension implements PrependExtensionInterface
 {
+    /** Container parameter holding `doctrine.entity_manager` (null: the default manager). */
+    public const ENTITY_MANAGER_PARAMETER = 'nowo_messenger_monitor_kit.doctrine.entity_manager';
+
     /** Default store of the runtime switches. */
     public const SETTINGS_STORE_ID = MonitorSettingsStoreInterface::class;
 
@@ -100,19 +105,33 @@ final class NowoMessengerMonitorKitExtension extends Extension implements Prepen
     {
         if ($this->bundleEntityEnabled($container) && !$this->hostEntityConfigured($container)) {
             if ($container->hasExtension('doctrine')) {
-                $container->prependExtensionConfig('doctrine', [
-                    'orm' => [
-                        'mappings' => [
-                            'NowoMessengerMonitorKitBundle' => [
-                                'type'      => 'attribute',
-                                'dir'       => __DIR__ . '/../Entity',
-                                'prefix'    => 'Nowo\MessengerMonitorKitBundle\Entity',
-                                'alias'     => 'NowoMessengerMonitorKit',
-                                'is_bundle' => false,
-                            ],
+                $mappings = [
+                    'mappings' => [
+                        'NowoMessengerMonitorKitBundle' => [
+                            'type'      => 'attribute',
+                            'dir'       => __DIR__ . '/../Entity',
+                            'prefix'    => 'Nowo\MessengerMonitorKitBundle\Entity',
+                            'alias'     => 'NowoMessengerMonitorKit',
+                            'is_bundle' => false,
                         ],
                     ],
-                ]);
+                ];
+                // 1.1: on doctrine.entity_manager when set (HistoryEntityManagerPass keeps it there only).
+                $entityManager = $this->configuredEntityManager($container);
+                if ($entityManager === null) {
+                    $container->prependExtensionConfig('doctrine', ['orm' => $mappings]);
+                } elseif ($entityManager === 'default' && !$this->hostDeclaresEntityManagers($container)) {
+                    // LH-MMK-L1: Flex shorthand (no entity_managers): its single manager is "default".
+                    $container->prependExtensionConfig('doctrine', ['orm' => $mappings]);
+                } elseif (($hostDefault = $this->hostDefaultEntityManager($container, $entityManager)) !== null) {
+                    // A prepended entity_managers entry comes first; pin the host's own default so the bundle manager
+                    // never becomes the default one (the host's default_entity_manager, when set, still wins).
+                    $container->prependExtensionConfig('doctrine', ['orm' => [
+                        'default_entity_manager' => $hostDefault,
+                        'entity_managers'        => [$entityManager => $mappings],
+                    ]]);
+                }
+                // An undeclared manager is not created here: HistoryEntityManagerPass fails the build with a clear message.
             }
             if ($container->hasExtension('zenstruck_messenger_monitor')) {
                 $container->prependExtensionConfig('zenstruck_messenger_monitor', ['storage' => ['orm' => ['entity_class' => ProcessedMessage::class]]]);
@@ -130,13 +149,23 @@ final class NowoMessengerMonitorKitExtension extends Extension implements Prepen
         $config = $this->processConfiguration(new Configuration(), $configs);
         $this->assertLiteralBooleans($config);
 
-        /** @var array{history: array{bundle_entity: bool}, doctrine: array{table_prefix: string}, recording: array{enabled: bool, optional_message_classes: list<string>, record_optional: bool, check_interval: int, store_results: bool}, settings: array{store: string, cache_pool: string}, retention: array{auto_purge: bool, older_than: string, keep_failed: bool, min_interval: int}, purge: array{batch_size: int, max_batches_per_request: int}, retry: array{batch_limit: int, fallback_transport: string|null, duplicate_risk_classes: list<string>, lock_ttl: float}, failure_transports: list<string>, queue_depth: array{transports: list<string>}, health_probe: array{enabled: bool, name: string, pending_warn_at: int|null, pending_fail_at: int|null, failed_warn_at: int|null, failed_fail_at: int|null, critical: bool}, payload: array{enabled: bool, max_depth: int, max_items: int, max_string_length: int, max_nodes: int, max_bytes: int}, redaction: array{keys: list<string>, extra_keys: list<string>, mask: string, mask_emails: bool, mask_long_numbers: bool}, retry_strategy: array{no_retry_on_decoding_failure: list<string>}, transport_factories: array{amqp: array{enabled: bool, prefix: string}, doctrine: array{enabled: bool}, failed_dsn_env: array{enabled: bool, queue_env: string, redis_env: string}}, web_ui: array{enabled: bool, path_prefix: string, layout_template: string|null, templates: array<string, string>, per_page: int, transport_list_limit: int}, security: array{access_roles: list<string>, manage_roles: list<string>|null, access_checker: string|null, allow_unauthenticated: bool}} $config */
+        /** @var array{history: array{bundle_entity: bool}, doctrine: array{table_prefix: string, entity_manager: string|null}, recording: array{enabled: bool, optional_message_classes: list<string>, record_optional: bool, check_interval: int, store_results: bool}, settings: array{store: string, cache_pool: string}, retention: array{auto_purge: bool, older_than: string, keep_failed: bool, min_interval: int}, purge: array{batch_size: int, max_batches_per_request: int}, retry: array{batch_limit: int, fallback_transport: string|null, duplicate_risk_classes: list<string>, lock_ttl: float}, failure_transports: list<string>, queue_depth: array{transports: list<string>}, health_probe: array{enabled: bool, name: string, pending_warn_at: int|null, pending_fail_at: int|null, failed_warn_at: int|null, failed_fail_at: int|null, critical: bool}, payload: array{enabled: bool, max_depth: int, max_items: int, max_string_length: int, max_nodes: int, max_bytes: int}, redaction: array{keys: list<string>, extra_keys: list<string>, mask: string, mask_emails: bool, mask_long_numbers: bool}, retry_strategy: array{no_retry_on_decoding_failure: list<string>}, transport_factories: array{amqp: array{enabled: bool, prefix: string}, doctrine: array{enabled: bool}, failed_dsn_env: array{enabled: bool, queue_env: string, redis_env: string}}, web_ui: array{enabled: bool, path_prefix: string, layout_template: string|null, templates: array<string, string>, per_page: int, transport_list_limit: int}, security: array{access_roles: list<string>, manage_roles: list<string>|null, access_checker: string|null, allow_unauthenticated: bool}} $config */
         $webUi = $config['web_ui']['enabled'];
         if ($webUi && !$config['security']['allow_unauthenticated'] && !$this->hasSecurityBundle($container)) {
             throw new LogicException('NowoMessengerMonitorKitBundle: the admin UI requires symfony/security-bundle (or security.allow_unauthenticated: true in dev / demo only).');
         }
 
         $container->setParameter('nowo_messenger_monitor_kit.doctrine.table_prefix', $config['doctrine']['table_prefix']);
+        $container->setParameter(self::ENTITY_MANAGER_PARAMETER, $config['doctrine']['entity_manager']);
+        if ($config['doctrine']['entity_manager'] !== null) {
+            if (!$config['history']['bundle_entity'] || $this->hostEntityConfigured($container)) {
+                throw new LogicException('NowoMessengerMonitorKitBundle: doctrine.entity_manager places the bundle history entity; with your own zenstruck history entity (or history.bundle_entity: false) map that entity on the manager you want instead.');
+            }
+            $container->setDefinition(OwnHistoryManagerSubscriber::class, new Definition(OwnHistoryManagerSubscriber::class, [
+                new Reference('doctrine'),
+                $config['doctrine']['entity_manager'],
+            ]))->setAutoconfigured(true); // #[AsEventListener] boundaries
+        }
         $container->setParameter('nowo_messenger_monitor_kit.web_ui.enabled', $webUi);
         $container->setParameter('nowo_messenger_monitor_kit.web_ui.path_prefix', $config['web_ui']['path_prefix']);
         $container->setParameter('nowo_messenger_monitor_kit.security.allow_unauthenticated', $config['security']['allow_unauthenticated']);
@@ -515,6 +544,61 @@ final class NowoMessengerMonitorKitExtension extends Extension implements Prepen
         }
 
         return $enabled;
+    }
+
+    /**
+     * `doctrine.entity_manager` from the raw configs (prepend runs before the configuration is processed).
+     */
+    private function configuredEntityManager(ContainerBuilder $container): ?string
+    {
+        $name = null;
+        foreach ($container->getExtensionConfig(Configuration::ALIAS) as $config) {
+            if (isset($config['doctrine']) && is_array($config['doctrine']) && array_key_exists('entity_manager', $config['doctrine'])) {
+                $value = $config['doctrine']['entity_manager'];
+                $name  = is_string($value) && $value !== '' ? $value : null;
+            }
+        }
+
+        return $name;
+    }
+
+    /**
+     * Whether the host declares `doctrine.orm.entity_managers` (else it uses the single-manager shorthand).
+     */
+    private function hostDeclaresEntityManagers(ContainerBuilder $container): bool
+    {
+        foreach ($container->getExtensionConfig('doctrine') as $config) {
+            $orm = is_array($config['orm'] ?? null) ? $config['orm'] : [];
+            if (is_array($orm['entity_managers'] ?? null) && $orm['entity_managers'] !== []) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * The host's default entity manager (its `default_entity_manager`, else the first manager it declares) when the
+     * host declares `$name` under `doctrine.orm.entity_managers`; null when it does not declare it.
+     */
+    private function hostDefaultEntityManager(ContainerBuilder $container, string $name): ?string
+    {
+        $declared = false;
+        $default  = null;
+        $first    = null;
+        foreach ($container->getExtensionConfig('doctrine') as $config) {
+            $orm = is_array($config['orm'] ?? null) ? $config['orm'] : [];
+            if (is_string($orm['default_entity_manager'] ?? null)) {
+                $default = $orm['default_entity_manager'];
+            }
+            $managers = $orm['entity_managers'] ?? null;
+            if (is_array($managers) && $managers !== []) {
+                $first ??= (string) array_key_first($managers);
+                $declared = $declared || isset($managers[$name]);
+            }
+        }
+
+        return $declared ? ($default ?? $first) : null;
     }
 
     /**

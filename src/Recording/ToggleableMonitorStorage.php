@@ -19,13 +19,18 @@ use function is_array;
  * Decorates zenstruck's history storage (`zenstruck_messenger_monitor.history.storage`): skips writes while the
  * recording switch is off (no redeploy, no worker restart), skips `recording.optional_message_classes` unless their
  * switch is on, and minimises what is stored (handler results redacted, or dropped with `store_results: false`).
- * Reads, purges and deletes always delegate, so the UI keeps working while recording is off.
+ * Reads and purges always delegate, so the UI keeps working while recording is off.
+ *
+ * 1.1 (rule 6): with a {@see DbalHistoryWriter} (wired for zenstruck's ORM storage) rows are inserted and deleted
+ * with plain DBAL statements instead of zenstruck's `persist()` + `flush()`, so recording a handled or failed message
+ * never flushes the host's entity manager.
  */
 final readonly class ToggleableMonitorStorage implements Storage
 {
     /**
      * @param list<string> $optionalClasses message classes / parents recorded only with the optional switch
      * @param bool $storeResults false = save no handler results
+     * @param DbalHistoryWriter|null $writer DBAL writes (null: the decorated storage writes)
      */
     public function __construct(
         private Storage $inner,
@@ -33,6 +38,7 @@ final readonly class ToggleableMonitorStorage implements Storage
         private Redactor $redactor,
         private array $optionalClasses = [],
         private bool $storeResults = true,
+        private ?DbalHistoryWriter $writer = null,
     ) {
     }
 
@@ -46,6 +52,12 @@ final readonly class ToggleableMonitorStorage implements Storage
             return;
         }
         if (!$settings->recordOptional && $this->isOptional($envelope->getMessage())) {
+            return;
+        }
+
+        if ($this->writer instanceof DbalHistoryWriter) {
+            $this->writer->save($envelope, $this->minimise($results), $exception);
+
             return;
         }
 
@@ -79,10 +91,16 @@ final readonly class ToggleableMonitorStorage implements Storage
     }
 
     /**
-     * Delegates.
+     * Deletes through the DBAL writer when wired, else delegates.
      */
     public function delete(mixed $id): void
     {
+        if ($this->writer instanceof DbalHistoryWriter) {
+            $this->writer->delete($id);
+
+            return;
+        }
+
         $this->inner->delete($id);
     }
 

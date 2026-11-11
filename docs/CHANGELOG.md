@@ -5,6 +5,35 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+Target 1.1.0 (architecture bar W1: standard Symfony and DDD hosts, rules 4 and 6).
+
+### Fixed
+
+- Rule 6: recording the history no longer flushes the host's entity manager. zenstruck's ORM storage did `persist()`
+  + `flush()` on the manager that maps the history entity (the host's default one) after every handled and failed
+  message. With DoctrineBundle's worker clear subscriber (priority 0, clears every manager before the history listener
+  at -100) the handler's own pending changes were not affected; what was committed were changes persisted by host
+  `WorkerMessageHandledEvent` / `WorkerMessageFailedEvent` listeners between priorities 0 and -100, or anything
+  pending in hosts without that subscriber. History rows are now inserted and deleted with plain DBAL statements built
+  from the entity metadata (`DbalHistoryWriter`), inside a SAVEPOINT when a transaction is open (the original error is
+  rethrown if the insert fails). Affected: 1.0.0 – 1.0.1.
+- A handler that closed the default entity manager no longer stops the consumer: the history listener threw
+  `EntityManagerClosed` from `WorkerMessageFailedEvent` (the worker loop stopped and the history row was lost). The
+  DBAL writer records the row on the connection.
+- `doctrine.entity_manager` naming the host's default manager (e.g. `default`) only selects it: the bundle never
+  clears or resets the host default, and a single-manager (Flex shorthand) host gets the mapping on it.
+
+### Added
+
+- `doctrine.entity_manager` (default `null`): map the bundle history entity on a dedicated entity manager. It is
+  mapped there ONLY (`HistoryEntityManagerPass` removes it from every other manager, `auto_mapping` included; zenstruck's
+  superclass mapping follows), reads and purges use it, the bundle clears it at the end of each request, message and
+  command, the host's `default_entity_manager` stays the host's, and the build fails clearly when the manager is not
+  declared.
+- `MessengerMonitorActionEvent::$userIdentifier` (rule 4). `$user` stays for standard hosts and is deprecated (removed
+  in 2.0).
+- CI job running the history writer tests on MySQL 8.4 and PostgreSQL 17 (plus SQLite).
+
 ## [1.0.1] - 2026-11-01
 
 Docs/demo follow-ups: SECURITY audit grades, demo install race, ui-kit ^2.21 See [UPGRADING](UPGRADING.md#to-101).
