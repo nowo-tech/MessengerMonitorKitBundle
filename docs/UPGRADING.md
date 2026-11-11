@@ -3,7 +3,7 @@
 ## Table of contents
 
 - [Unreleased](#unreleased)
-  - [To 1.1.0](#to-110)
+- [To 1.1.0](#to-110)
 - [To 1.0.1](#to-101)
 - [To 1.0.0](#to-100)
   - [Requirements](#requirements)
@@ -13,7 +13,7 @@
 
 ## Unreleased
 
-### To 1.1.0
+## To 1.1.0
 
 Standard hosts: **no configuration change**. History rows are written with DBAL instead of zenstruck's
 `persist()` + `flush()`: the worker no longer flushes your default entity manager after each message.

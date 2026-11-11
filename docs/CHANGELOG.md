@@ -5,7 +5,10 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
-Target 1.1.0 (architecture bar W1: standard Symfony and DDD hosts, rules 4 and 6).
+## [1.1.0] - 2026-11-11
+
+Message history rows are written with DBAL and never flush the host's entity manager; a closed default manager no longer stops the consumer; new doctrine.entity_manager option. See [UPGRADING](https://github.com/nowo-tech/MessengerMonitorKitBundle/blob/v1.1.0/docs/UPGRADING.md#to-110).
+
 
 ### Fixed
 
