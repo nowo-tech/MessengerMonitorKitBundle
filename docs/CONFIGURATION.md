@@ -32,6 +32,7 @@ nowo_messenger_monitor_kit:
         bundle_entity: true            # map the bundle entity unless zenstruck has an entity_class
     doctrine:
         table_prefix: ''               # app_ → app_messenger_processed_messages
+        entity_manager: null           # 1.1: dedicated manager of the history entity (null: default manager)
     recording:
         enabled: true                  # default of the runtime "record history" switch
         optional_message_classes: []   # high-volume classes recorded only with "record optional"
@@ -109,6 +110,7 @@ nowo_messenger_monitor_kit:
 | Key | Default | Meaning |
 | --- | --- | --- |
 | `history.bundle_entity` | `true` | Map `Nowo\MessengerMonitorKitBundle\Entity\ProcessedMessage` and set it as `zenstruck_messenger_monitor.storage.orm.entity_class` — only when the host did not configure its own entity. With `false` and no zenstruck entity, the admin UI refuses to compile (it needs the history) and the history services are removed when the UI is off. |
+| `doctrine.entity_manager` | `null` | **1.1.** Entity manager that maps the bundle history entity. When set, the entity (and zenstruck's superclass mapping) is mapped on that manager **only**, also off an `auto_mapping: true` default; reads and purges use it and the bundle clears it at the end of each request / message / command. Declare it under `doctrine.orm.entity_managers`; an undeclared name fails the build. Only for the bundle entity. Recording never flushes any manager (DBAL inserts). |
 | `doctrine.table_prefix` | `''` | Prefix of the bundle table **and** index names (REQ-ORM-002), applied by a `loadClassMetadata` listener scoped to the bundle namespace: `app_` gives `app_messenger_processed_messages`, `app_idx_mpm_finished_at`. Host entities are never renamed. |
 
 ## Recording switches

@@ -149,6 +149,7 @@ final class AdminUiTest extends KernelTestCase
 
         self::assertSame([MessengerMonitorActionEvent::RETRIED, MessengerMonitorActionEvent::REMOVED], array_map(static fn (MessengerMonitorActionEvent $e): string => $e->action, $recorder->events));
         self::assertSame(['transport' => 'failed', 'count' => 1, 'types' => ['DemoMessage' => 1], 'targets' => ['async']], $recorder->events[0]->context);
+        self::assertSame('admin', $recorder->events[0]->userIdentifier, 'rule 4: the identifier, not only the user object');
     }
 
     public function testActionsAreGuarded(): void

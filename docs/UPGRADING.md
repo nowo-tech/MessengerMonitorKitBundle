@@ -3,6 +3,7 @@
 ## Table of contents
 
 - [Unreleased](#unreleased)
+  - [To 1.1.0](#to-110)
 - [To 1.0.1](#to-101)
 - [To 1.0.0](#to-100)
   - [Requirements](#requirements)
@@ -11,6 +12,19 @@
   - [Breaking changes](#breaking-changes)
 
 ## Unreleased
+
+### To 1.1.0
+
+Standard hosts: **no configuration change**. History rows are written with DBAL instead of zenstruck's
+`persist()` + `flush()`: the worker no longer flushes your default entity manager after each message.
+
+- Audit listeners: prefer `$event->userIdentifier` over `$event->user` (deprecated, removed in 2.0).
+- New optional `doctrine.entity_manager: <name>` (DDD hosts, or to keep the history off your default manager):
+  declare the manager under `doctrine.orm.entity_managers` (no mappings needed; the bundle adds its own), and create
+  or migrate `messenger_processed_messages` on its connection. It only applies to the bundle history entity
+  (`history.bundle_entity: true` and no zenstruck `entity_class` of your own).
+- A custom zenstruck `Storage` is untouched; with zenstruck's ORM storage, `save()` and `delete()` now go through
+  `DbalHistoryWriter` (reads and purges still delegate).
 
 ## To 1.0.1
 

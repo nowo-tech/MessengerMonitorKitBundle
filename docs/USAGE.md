@@ -10,6 +10,7 @@
 - [Queue depth](#queue-depth)
 - [Redaction hooks](#redaction-hooks)
 - [Audit events](#audit-events)
+- [Standard Symfony and DDD / hexagonal hosts](#standard-symfony-and-ddd--hexagonal-hosts)
 - [Layout and theme](#layout-and-theme)
 - [Overriding templates](#overriding-templates)
   - [Override vs upgrade](#override-vs-upgrade)
@@ -157,9 +158,38 @@ public function onMonitorAction(MessengerMonitorActionEvent $event): void
 {
     // $event->action: retried | removed | purged | settings_updated
     // $event->context: transport, count, types, targets / older_than, deleted / settings — never a payload
-    // $event->user: the authenticated user (null with allow_unauthenticated)
+    // $event->userIdentifier: getUserIdentifier() of the user (1.1; null with allow_unauthenticated)
+    // $event->user: the user object (deprecated, removed in 2.0)
 }
 ```
+
+## Standard Symfony and DDD / hexagonal hosts
+
+Both paths are supported (1.1); the standard one is the zero-config default.
+
+- **Standard host:** nothing to configure. The history entity is mapped on your default manager; the worker writes each
+  row with one DBAL `INSERT` (never `flush()`), so changes your own code left pending in that manager are never
+  committed by the monitor. Audit with `MessengerMonitorActionEvent` (`userIdentifier`, scalar context).
+- **DDD / hexagonal host:** keep the monitor out of your domain manager:
+
+  ```yaml
+  doctrine:
+      orm:
+          default_entity_manager: default
+          entity_managers:
+              default: { connection: default, mappings: { App: { type: xml, dir: '%kernel.project_dir%/config/doctrine', prefix: 'App\\Domain' } } }
+              monitor: { connection: default }   # same or another connection
+  nowo_messenger_monitor_kit:
+      doctrine:
+          entity_manager: monitor
+  ```
+
+  The history entity is then mapped on `monitor` only (also off an `auto_mapping` default), reads / purges use it, the
+  bundle clears it at the end of every request, message and command, and your default manager is never flushed,
+  cleared or reset by the bundle. Host messages need no attribute, interface or base class; payload redaction goes
+  through `PayloadRedactorInterface`.
+- There is no "host controls the transaction" mode: the history is infrastructure written by the worker. When a
+  transaction is open at that moment the row is written inside a SAVEPOINT and follows that transaction.
 
 ## Layout and theme
 
@@ -235,7 +265,8 @@ nav:
 
 ## FrankenPHP worker mode
 
-All services are stateless except `RecordingSwitch`, which keeps the two switches for `recording.check_interval`
+History rows are written with DBAL (no unit of work); with `doctrine.entity_manager` the bundle clears that manager at
+the end of every request, message and command (`OwnHistoryManagerSubscriber`). All services are stateless except `RecordingSwitch`, which keeps the two switches for `recording.check_interval`
 seconds on purpose (one store read per interval instead of one per message; configuration only, never request data).
 The access guard trusts a token only when a firewall matched the current main request. Verified by PHPStan FrankenPHP
 rulesets and Igor (see [FRANKENPHP-WORKER-AUDIT.md](FRANKENPHP-WORKER-AUDIT.md)).

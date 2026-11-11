@@ -183,6 +183,50 @@ jobs:
       - name: Igor worker-state audit (REQ-CS-008)
         run: composer igor
 
+  databases:
+    name: History writer on MySQL and PostgreSQL
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
+          MYSQL_DATABASE: app
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1"
+          --health-interval=5s --health-timeout=5s --health-retries=20
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+          POSTGRES_DB: app
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=5s --health-timeout=5s --health-retries=20
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: json, pdo_sqlite, pdo_mysql, pdo_pgsql, sodium
+          tools: composer:v2
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+      - name: DbalHistoryWriter on SQLite, MySQL and PostgreSQL (rule 6, savepoints)
+        env:
+          NOWO_TEST_MYSQL_URL: mysql://root@127.0.0.1:3306/app?serverVersion=8.4.0
+          NOWO_TEST_PGSQL_URL: pgsql://postgres@127.0.0.1:5432/app?serverVersion=17
+        run: vendor/bin/phpunit --no-coverage --filter DbalHistoryWriterTest
+
   coverage:
     name: Code Coverage
     runs-on: ubuntu-latest

@@ -9,9 +9,13 @@ use Nowo\MessengerMonitorKitBundle\Command\PurgeHistoryCommand;
 use Nowo\MessengerMonitorKitBundle\Controller\SettingsController;
 use Nowo\MessengerMonitorKitBundle\History\AutoPurger;
 use Nowo\MessengerMonitorKitBundle\History\HistoryPurger;
+use Nowo\MessengerMonitorKitBundle\Recording\DbalHistoryWriter;
 use Nowo\MessengerMonitorKitBundle\Recording\ToggleableMonitorStorage;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Definition;
+use Symfony\Component\DependencyInjection\Reference;
+use Zenstruck\Messenger\Monitor\History\Storage\ORMStorage;
 
 use function class_exists;
 use function is_string;
@@ -54,6 +58,13 @@ final class HistoryStoragePass implements CompilerPassInterface
         }
 
         $container->getDefinition(HistoryPurger::class)->replaceArgument(1, $entityClass);
-        $container->getDefinition(ToggleableMonitorStorage::class)->setDecoratedService(self::STORAGE_ID);
+        $storage = $container->getDefinition(ToggleableMonitorStorage::class)->setDecoratedService(self::STORAGE_ID);
+
+        // 1.1 (rule 6): zenstruck's ORM storage flushes the manager of the history entity (the host's by default)
+        // after every handled / failed message; the bundle writes those rows with DBAL instead.
+        if ($container->getDefinition(self::STORAGE_ID)->getClass() === ORMStorage::class) {
+            // @igor-ignore - Compile-time container definition (not request state).
+            $storage->setArgument(5, new Definition(DbalHistoryWriter::class, [new Reference('doctrine'), $entityClass]));
+        }
     }
 }

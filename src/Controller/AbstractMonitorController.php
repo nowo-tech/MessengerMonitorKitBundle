@@ -14,6 +14,7 @@ use Psr\EventDispatcher\EventDispatcherInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
+use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
@@ -77,7 +78,13 @@ abstract class AbstractMonitorController extends AbstractController
      */
     protected function audit(string $action, array $context): void
     {
-        $this->events?->dispatch(new MessengerMonitorActionEvent($action, $context, $this->guard->user()));
+        $user = $this->guard->user();
+        $this->events?->dispatch(new MessengerMonitorActionEvent(
+            $action,
+            $context,
+            $user,
+            $user instanceof UserInterface ? $user->getUserIdentifier() : null,
+        ));
     }
 
     /**

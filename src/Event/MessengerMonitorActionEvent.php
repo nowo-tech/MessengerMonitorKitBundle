@@ -25,12 +25,15 @@ final readonly class MessengerMonitorActionEvent
     /**
      * @param string $action one of the class constants
      * @param array<string, mixed> $context action details (no payload)
-     * @param object|null $user authenticated user (null with allow_unauthenticated)
+     * @param object|null $user authenticated user (null with allow_unauthenticated); prefer $userIdentifier (1.1),
+     *                          the object stays for standard hosts and is deprecated, to be removed in 2.0
+     * @param string|null $userIdentifier `UserInterface::getUserIdentifier()` of that user (1.1, rule 4)
      */
     public function __construct(
         public string $action,
         public array $context = [],
         public ?object $user = null,
+        public ?string $userIdentifier = null,
     ) {
     }
 }

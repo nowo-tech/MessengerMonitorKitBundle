@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Nowo\MessengerMonitorKitBundle;
 
 use Nowo\MessengerMonitorKitBundle\DependencyInjection\Compiler\CsrfProtectionPass;
+use Nowo\MessengerMonitorKitBundle\DependencyInjection\Compiler\HistoryEntityManagerPass;
 use Nowo\MessengerMonitorKitBundle\DependencyInjection\Compiler\HistoryStoragePass;
 use Nowo\MessengerMonitorKitBundle\DependencyInjection\Compiler\MessengerIntegrationPass;
 use Nowo\MessengerMonitorKitBundle\DependencyInjection\Compiler\TwigPathsPass;
 use Nowo\MessengerMonitorKitBundle\DependencyInjection\Compiler\UnauthenticatedAccessPass;
 use Nowo\MessengerMonitorKitBundle\DependencyInjection\NowoMessengerMonitorKitExtension;
+use Symfony\Component\DependencyInjection\Compiler\PassConfig;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\ExtensionInterface;
 use Symfony\Component\HttpKernel\Bundle\Bundle;
@@ -44,6 +46,9 @@ final class NowoMessengerMonitorKitBundle extends Bundle
         $container->addCompilerPass(new UnauthenticatedAccessPass());
         $container->addCompilerPass(new HistoryStoragePass());
         $container->addCompilerPass(new MessengerIntegrationPass());
+        // 1.1: fail fast on an unknown doctrine.entity_manager, then keep the history entity on that manager only.
+        $container->addCompilerPass(new HistoryEntityManagerPass(checkOnly: true), PassConfig::TYPE_BEFORE_OPTIMIZATION, 10);
+        $container->addCompilerPass(new HistoryEntityManagerPass(), PassConfig::TYPE_BEFORE_OPTIMIZATION, -10);
     }
 
     /**
