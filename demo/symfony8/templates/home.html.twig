@@ -2,39 +2,36 @@
 
 {% block title %}Home - Messenger Monitor Kit Demo{% endblock %}
 
+{% block nowo_ui_page_header %}
+    {{ include(nowo_ui_partial('page_header'), {
+        title: 'Messenger Monitor Kit',
+        intro: 'A UiKit admin UI on top of zenstruck/messenger-monitor-bundle: message history with filters, failed messages retried to their original transport (CSRF, confirm, per-message lock), redacted payloads, a recording switch that applies without a redeploy and batched retention.',
+    }) }}
+{% endblock %}
+
 {% block body %}
-<div class="card shadow-sm mb-4">
-    <div class="card-header"><h2 class="mb-0">Messenger Monitor Kit</h2></div>
-    <div class="card-body">
-        <p>
-            A UiKit admin UI on top of <code>zenstruck/messenger-monitor-bundle</code>: message history with filters,
-            failed messages retried to their <strong>original</strong> transport (CSRF, confirm, per-message lock),
-            redacted payloads, a recording switch that applies without a redeploy and batched retention.
-        </p>
-        <p class="mb-0">
-            The demo seed dispatched invoices, inventory syncs and page views on a Doctrine (MySQL) queue and ran a
-            worker: a few failed and wait on the <code>failed</code> transport. FrankenPHP mode:
-            <strong>worker</strong> by default (<code>FRANKENPHP_MODE</code>).
-        </p>
-    </div>
-</div>
+    <p class="nowo-ui-muted">
+        The demo seed dispatched invoices, inventory syncs and page views on a Doctrine (MySQL) queue and ran a
+        worker: a few failed and wait on the <code>failed</code> transport. FrankenPHP mode:
+        <strong>worker</strong> by default (<code>FRANKENPHP_MODE</code>).
+    </p>
 
-<div class="card shadow-sm mb-4" data-testid="demo-depth">
-    <div class="card-header"><h3 class="mb-0">Queue depth service</h3></div>
-    <div class="card-body">
-        <dl class="row mb-0">
-            <dt class="col-sm-4">Pending</dt><dd class="col-sm-8" data-testid="demo-pending">{{ depth.pending ?? '—' }}</dd>
-            <dt class="col-sm-4">Failed</dt><dd class="col-sm-8" data-testid="demo-failed">{{ depth.failed ?? '—' }}</dd>
-        </dl>
-    </div>
-</div>
+    <section class="nowo-ui-card" data-testid="demo-depth">
+        <div class="nowo-ui-card__header"><h2 class="nowo-ui-card__title">Queue depth service</h2></div>
+        <div class="nowo-ui-card__body">
+            <dl class="nowo-ui-detail-list">
+                <div class="nowo-ui-detail-list__item"><dt class="nowo-ui-detail-list__term">Pending</dt><dd class="nowo-ui-detail-list__value" data-testid="demo-pending">{{ depth.pending ?? '—' }}</dd></div>
+                <div class="nowo-ui-detail-list__item"><dt class="nowo-ui-detail-list__term">Failed</dt><dd class="nowo-ui-detail-list__value" data-testid="demo-failed">{{ depth.failed ?? '—' }}</dd></div>
+            </dl>
+        </div>
+    </section>
 
-<div class="card shadow-sm">
-    <div class="card-header"><h3 class="mb-0">Monitor</h3></div>
-    <div class="card-body">
-        <a class="btn btn-primary" href="{{ path('nowo_messenger_monitor_kit_dashboard') }}">Open the dashboard</a>
-        <a class="btn btn-outline-secondary" href="{{ path('nowo_messenger_monitor_kit_transport', {name: 'failed'}) }}">Failed messages</a>
-        <a class="btn btn-outline-secondary" href="{{ path('nowo_messenger_monitor_kit_history') }}">History</a>
-    </div>
-</div>
+    <section class="nowo-ui-card">
+        <div class="nowo-ui-card__header"><h2 class="nowo-ui-card__title">Monitor</h2></div>
+        <div class="nowo-ui-card__body">
+            <a class="nowo-ui-btn nowo-ui-btn--primary" href="{{ path('nowo_messenger_monitor_kit_dashboard') }}">Open the dashboard</a>
+            <a class="nowo-ui-btn nowo-ui-btn--outline" href="{{ path('nowo_messenger_monitor_kit_transport', {name: 'failed'}) }}">Failed messages</a>
+            <a class="nowo-ui-btn nowo-ui-btn--outline" href="{{ path('nowo_messenger_monitor_kit_history') }}">History</a>
+        </div>
+    </section>
 {% endblock %}
