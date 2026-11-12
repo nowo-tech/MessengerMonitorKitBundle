@@ -156,7 +156,7 @@ final class HistoryRecordingKernelTest extends KernelTestCase
 
         $dispatcher = $this->dispatcher($kernel);
         $baseline   = 0;
-        for ($i = 0; $i < 300; ++$i) {
+        for ($i = 0; $i < 1000; ++$i) {
             $dispatcher->dispatch(new WorkerMessageHandledEvent($this->envelope(), 'async'));
             self::assertNotNull($storage->find($i + 1), 'the UI read loads the row into the bundle manager');
             $dispatcher->dispatch(new WorkerMessageHandledEvent(new Envelope(new DemoMessage()), 'async'));
@@ -166,7 +166,7 @@ final class HistoryRecordingKernelTest extends KernelTestCase
             }
         }
 
-        self::assertSame(300, (int) $monitor->getConnection()->fetchOne('SELECT COUNT(*) FROM messenger_processed_messages'));
+        self::assertSame(1000, (int) $monitor->getConnection()->fetchOne('SELECT COUNT(*) FROM messenger_processed_messages'));
         self::assertLessThan(4 * 1024 * 1024, memory_get_usage() - $baseline, 'memory stays flat');
     }
 
