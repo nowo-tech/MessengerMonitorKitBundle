@@ -8,6 +8,7 @@ All notable changes to this project are documented here. The format follows
 ### Changed
 
 - Demo uses the UiKit base style (REQ-DEMO-014)
+- docs: demo screenshots regenerated on the UiKit base style
 
 ## [1.1.0] - 2026-11-11
 
