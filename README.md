@@ -6,7 +6,7 @@
 
 **Symfony Messenger monitoring on top of [zenstruck/messenger-monitor-bundle](https://github.com/zenstruck/messenger-monitor-bundle):** a UiKit admin UI (dashboard, filterable history, transports, failed messages), safe retry of failed messages back to their original transport, a runtime recording switch, batched retention, queue depth (with an optional HealthKit probe) and redaction of the personal data messages carry.
 
-> 📋 **Compatible with Symfony 7.4, 8.0 and 8.1** · PHP 8.2+ (Symfony 8.x requires PHP 8.4+) · zenstruck/messenger-monitor-bundle ^0.6
+> 📋 **Compatible with Symfony 7.4, 8.0 and 8.1** · PHP 8.2+ (Symfony 8.x requires PHP 8.4+) · zenstruck/messenger-monitor-bundle ^0.6 || ^0.7
 
 ![FrankenPHP Friendly Worker Mode](docs/images/frankenphp-friendly.png)
 
@@ -88,7 +88,7 @@ nowo_messenger_monitor_kit:
 ## Requirements
 
 - PHP 8.2–8.5, Symfony 7.4 / 8.0 / 8.1, Doctrine ORM 3.3+
-- `zenstruck/messenger-monitor-bundle` ^0.6, UiKitBundle ^2.20, FormKitBundle ^2.17 (dependencies)
+- `zenstruck/messenger-monitor-bundle` ^0.6 || ^0.7, UiKitBundle ^2.20, FormKitBundle ^2.17 (dependencies)
 - A listable failure transport (Doctrine or Redis) for the failed message pages
 
 ## Configuration

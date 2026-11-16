@@ -13,6 +13,25 @@
 
 ## Unreleased
 
+The bundle now accepts `zenstruck/messenger-monitor-bundle` **^0.6 || ^0.7**. Hosts on 0.6 change nothing:
+`composer update nowo-tech/messenger-monitor-kit-bundle` keeps zenstruck 0.6.
+
+To move to zenstruck 0.7:
+
+```bash
+composer update nowo-tech/messenger-monitor-kit-bundle zenstruck/messenger-monitor-bundle --with-dependencies
+```
+
+- zenstruck 0.7 maps `ProcessedMessage::$description` as `text` instead of `string` (`VARCHAR(255)`); the bundle
+  entity (and a host entity extending zenstruck's model) inherits it. Generate and run a Doctrine migration
+  (`doctrine:migrations:diff`) **before** restarting the Messenger workers, on the connection of the history entity
+  (`doctrine.entity_manager` when set). A host entity that overrides the `description` mapping must drop the override
+  or make it `text`. Under 0.6 a description over 255 characters could fail the history insert on strict databases.
+- No bundle configuration change. zenstruck's new `storage.auto_stamp` option (default `true`) is untouched by the
+  bundle; with `auto_stamp: false` only messages that carry a `MonitorStamp` are recorded.
+- zenstruck 0.7 requires `zenstruck/collection` ^0.9 (installed with `--with-dependencies`); the bundle uses only its
+  `Collection` interface.
+
 ## To 1.1.0
 
 Standard hosts: **no configuration change**. History rows are written with DBAL instead of zenstruck's

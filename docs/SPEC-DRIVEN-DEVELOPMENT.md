@@ -44,7 +44,7 @@ The sections below state **behavior**; this subsection states **intent** in back
 
 ## Bundle functional scope
 
-**Goal:** a UiKit admin UI and operational services on top of `zenstruck/messenger-monitor-bundle` (^0.6): runtime
+**Goal:** a UiKit admin UI and operational services on top of `zenstruck/messenger-monitor-bundle` (^0.6 || ^0.7): runtime
 recording switch, batched retention, safe retry to the original transport, queue depth, payload redaction.
 
 **In scope (Packagist API):** the services under `src/` (`ToggleableMonitorStorage`, `RecordingSwitch`, settings
