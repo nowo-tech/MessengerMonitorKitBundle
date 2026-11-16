@@ -101,7 +101,7 @@ jobs:
         with:
           php-version: '8.4'
           extensions: json, pdo_sqlite, sodium
-          coverage: none
+          coverage: pcov
           tools: composer:v2
 
       # No platform override: the lock (Symfony 7.4) is resolved for config.platform.php 8.2.0 and installs on 8.4;
