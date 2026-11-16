@@ -27,6 +27,9 @@ composer update nowo-tech/messenger-monitor-kit-bundle zenstruck/messenger-monit
   (`doctrine:migrations:diff`) **before** restarting the Messenger workers, on the connection of the history entity
   (`doctrine.entity_manager` when set). A host entity that overrides the `description` mapping must drop the override
   or make it `text`. Under 0.6 a description over 255 characters could fail the history insert on strict databases.
+- On MySQL / MariaDB the `VARCHAR(255)` → `LONGTEXT` change rebuilds (copies) the history table and blocks inserts
+  while it runs: purge the history first (`nowo:messenger-monitor:purge` or a short retention) or run the migration in
+  a quiet window with the workers stopped. On PostgreSQL the change is metadata-only.
 - No bundle configuration change. zenstruck's new `storage.auto_stamp` option (default `true`) is untouched by the
   bundle; with `auto_stamp: false` only messages that carry a `MonitorStamp` are recorded.
 - zenstruck 0.7 requires `zenstruck/collection` ^0.9 (installed with `--with-dependencies`); the bundle uses only its

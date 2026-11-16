@@ -137,6 +137,8 @@ Fix details are listed under `Security` in the [CHANGELOG](CHANGELOG.md).
   `DescriptionStamp` or `__toString()`) of every processed message as is in `messenger_processed_messages`; the UI shows
   them redacted and only to the manage area, but the database row keeps the original. Restrict database access, rely
   on retention, and keep personal data and secrets out of exception messages and `__toString()`.
+  With zenstruck 0.7 the `description` column is `TEXT`: descriptions are stored unbounded (0.6 capped them at 255
+  characters), so a long `__toString()` keeps more data in the row; keep `__toString()` short and data-free.
 - Free-text redaction cannot recognise names or addresses without a key, full-width / non-ASCII digits, or numbers
   split by other characters; key redaction matches normalised names (case, `_`, `-`, `.` ignored; short keys such as
   `name`, `code`, `key`, `ip`, `pin` only as the whole name).
