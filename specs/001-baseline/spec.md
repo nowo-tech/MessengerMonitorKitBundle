@@ -87,6 +87,12 @@ An operator opens the dashboard and the history.
   reads, purges and deletes always delegate.
 - **FR-REC-002**: Messages of `recording.optional_message_classes` are recorded only while optional recording is on.
 - **FR-REC-003**: Workers read the switches at most once per `recording.check_interval` seconds.
+- **FR-REC-004** (1.1.0): `DbalHistoryWriter` inserts history rows with DBAL inside a savepoint; it never flushes any
+  entity manager (REQ-ARCH-001 rule 6), and a failed insert rethrows the original error.
+- **FR-HIS-003** (1.1.0): `doctrine.entity_manager` (default `null`: the default manager) maps the bundle entity on a
+  dedicated manager only; `HistoryEntityManagerPass` fails the build for an undeclared manager name.
+- **FR-HIS-004** (1.1.0): with a dedicated manager, `OwnHistoryManagerSubscriber` resets it when closed and clears it
+  at the end of each request, message and command (REQ-RUNTIME-002); the host managers are never reset nor cleared.
 
 ### Runtime settings
 
@@ -169,7 +175,7 @@ An operator opens the dashboard and the history.
 - **SC-002**: PHPStan level 8 with FrankenPHP rulesets, Rector dry-run, PHP-CS-Fixer and Igor are clean.
 - **SC-003**: The UiKit page contract test passes for every page and fixture; no fixture personal data reaches the HTML.
 - **SC-004**: The demo e2e suite passes (dashboard, history filter, redacted payload, retry, settings).
-- **SC-005**: The code inventory maps **79/79** files under `src/`.
+- **SC-005**: The code inventory maps **82/82** files under `src/`.
 
 ## Non-goals
 

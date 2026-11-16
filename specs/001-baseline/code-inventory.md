@@ -2,9 +2,9 @@
 
 **Baseline spec**: [`spec.md`](spec.md)  
 **Package**: `nowo-tech/messenger-monitor-kit-bundle`  
-**Last audited**: 2026-11-01
+**Last audited**: 2026-11-16
 
-Scope: every file under `src/`. Audit command: `find src -type f | wc -l` → **79**.
+Scope: every file under `src/`. Audit command: `find src -type f | wc -l` → **82**.
 
 ## Bundle and dependency injection
 
@@ -18,6 +18,7 @@ Scope: every file under `src/`. Audit command: `find src -type f | wc -l` → **
 | `src/DependencyInjection/Compiler/HistoryStoragePass.php` | Bundle and dependency injection | FR-REC-001, FR-HIS-001 |
 | `src/DependencyInjection/Compiler/MessengerIntegrationPass.php` | Bundle and dependency injection | FR-MSG-001, FR-MSG-002 |
 | `src/DependencyInjection/Compiler/TwigPathsPass.php` | Bundle and dependency injection | FR-UI-006 |
+| `src/DependencyInjection/Compiler/HistoryEntityManagerPass.php` | Bundle and dependency injection | FR-HIS-003 |
 
 ## History storage and recording
 
@@ -27,6 +28,8 @@ Scope: every file under `src/`. Audit command: `find src -type f | wc -l` → **
 | `src/Doctrine/TablePrefixListener.php` | History storage and recording | FR-HIS-002 |
 | `src/Recording/ToggleableMonitorStorage.php` | History storage and recording | FR-REC-001, FR-REC-002, FR-PII-002 |
 | `src/Recording/RecordingSwitch.php` | History storage and recording | FR-REC-003 |
+| `src/Recording/DbalHistoryWriter.php` | History storage and recording | FR-REC-004 |
+| `src/Recording/OwnHistoryManagerSubscriber.php` | History storage and recording | FR-HIS-004 |
 
 ## Runtime settings
 
@@ -154,8 +157,8 @@ Scope: every file under `src/`. Audit command: `find src -type f | wc -l` → **
 
 | Category | Files |
 | --- | --- |
-| Bundle and dependency injection | 8 |
-| History storage and recording | 4 |
+| Bundle and dependency injection | 9 |
+| History storage and recording | 6 |
 | Runtime settings | 7 |
 | Purge and retention | 6 |
 | Retry of failed messages | 4 |
@@ -167,6 +170,6 @@ Scope: every file under `src/`. Audit command: `find src -type f | wc -l` → **
 | Forms | 3 |
 | UI view models and Twig | 13 |
 | Translations | 7 |
-| **Total production sources** | **79** |
+| **Total production sources** | **82** |
 
-Mapped 79 / 79 files under `src/` (100%). No generated or build output is shipped under `src/`.
+Mapped 82 / 82 files under `src/` (100%). No generated or build output is shipped under `src/`.
