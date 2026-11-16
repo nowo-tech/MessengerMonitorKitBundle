@@ -3,12 +3,32 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 
+## Table of contents
+
+- [Unreleased](#unreleased)
+  - [Changed](#changed)
+  - [Documentation](#documentation)
+- [1.1.0 - 2026-11-11](#110---2026-11-11)
+  - [Fixed](#fixed)
+  - [Added](#added)
+- [1.0.1 - 2026-11-01](#101---2026-11-01)
+  - [Changed](#changed-1)
+  - [Fixed](#fixed-1)
+  - [Documentation](#documentation-1)
+- [1.0.0 - 2026-11-01](#100---2026-11-01)
+  - [Added](#added-1)
+  - [Security](#security)
+
 ## [Unreleased]
 
 ### Changed
 
 - Demo uses the UiKit base style (REQ-DEMO-014)
 - docs: demo screenshots regenerated on the UiKit base style
+
+### Documentation
+
+- Table of contents in the changelog and the worker audit; Spec Kit inventory maps the three 1.1.0 files (82/82); README coverage counts refreshed (REQ sweep 2026-11-16)
 
 ## [1.1.0] - 2026-11-11
 

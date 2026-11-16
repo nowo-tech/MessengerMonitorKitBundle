@@ -16,6 +16,7 @@
 - [Findings](#findings)
 - [Usage recommendations in worker mode](#usage-recommendations-in-worker-mode)
 - [Re-audit triggers](#re-audit-triggers)
+- [Kept-alive kernel, reset false (1.1.0)](#kept-alive-kernel-reset-false-110)
 
 ## Execution model assumed
 
