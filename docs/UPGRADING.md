@@ -3,6 +3,7 @@
 ## Table of contents
 
 - [Unreleased](#unreleased)
+- [To 1.2.0](#to-120)
 - [To 1.1.0](#to-110)
 - [To 1.0.1](#to-101)
 - [To 1.0.0](#to-100)
@@ -12,6 +13,14 @@
   - [Breaking changes](#breaking-changes)
 
 ## Unreleased
+
+## To 1.2.0
+
+From **1.1.0**:
+
+```bash
+composer update nowo-tech/messenger-monitor-kit-bundle
+```
 
 The bundle now accepts `zenstruck/messenger-monitor-bundle` **^0.6 || ^0.7**. Hosts on 0.6 change nothing:
 `composer update nowo-tech/messenger-monitor-kit-bundle` keeps zenstruck 0.6.

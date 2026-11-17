@@ -70,7 +70,7 @@ Hosts that already have a zenstruck history entity keep it: set `zenstruck_messe
 yourself and the kit uses that entity (the batched purge reads its table and columns from the Doctrine metadata). The
 table layout is zenstruck's. A table created under zenstruck 0.7 needs no migration, but on zenstruck 0.7 a table
 created under 0.6 or earlier needs the `description` `VARCHAR(255)` → `TEXT` migration (generate it with
-`doctrine:migrations:diff`); see [UPGRADING](UPGRADING.md#unreleased).
+`doctrine:migrations:diff`); see [UPGRADING](UPGRADING.md#to-120).
 
 When `doctrine.entity_manager` is set, the history entity lives on that manager: generate and run the migration on its
 connection:

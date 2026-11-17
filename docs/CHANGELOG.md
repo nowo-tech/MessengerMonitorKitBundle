@@ -5,29 +5,32 @@ All notable changes to this project are documented here. The format follows
 
 ## Table of contents
 
-- [Unreleased](#unreleased)
+- [[Unreleased]](#unreleased)
+- [[1.2.0] - 2026-11-17](#120---2026-11-17)
   - [Changed](#changed)
   - [Demo](#demo)
   - [Documentation](#documentation)
   - [Tests](#tests)
-- [1.1.0 - 2026-11-11](#110---2026-11-11)
+- [[1.1.0] - 2026-11-11](#110---2026-11-11)
   - [Fixed](#fixed)
   - [Added](#added)
-- [1.0.1 - 2026-11-01](#101---2026-11-01)
+- [[1.0.1] - 2026-11-01](#101---2026-11-01)
   - [Changed](#changed-1)
   - [Fixed](#fixed-1)
   - [Documentation](#documentation-1)
-- [1.0.0 - 2026-11-01](#100---2026-11-01)
+- [[1.0.0] - 2026-11-01](#100---2026-11-01)
   - [Added](#added-1)
   - [Security](#security)
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-11-17
+
 ### Changed
 
 - `zenstruck/messenger-monitor-bundle` constraint widened to `^0.6 || ^0.7` (supersedes Dependabot #20): 0.6 hosts
   change nothing; on 0.7 the history `description` column becomes `TEXT` (long descriptions are stored instead of
-  failing the insert on strict databases) and needs a migration, see [UPGRADING](UPGRADING.md#unreleased). The lock,
+  failing the insert on strict databases) and needs a migration, see [UPGRADING](UPGRADING.md#to-120). The lock,
   the demo and CI run 0.7; a CI job keeps testing 0.6.
 
 ### Demo
@@ -47,7 +50,6 @@ All notable changes to this project are documented here. The format follows
 ## [1.1.0] - 2026-11-11
 
 Message history rows are written with DBAL and never flush the host's entity manager; a closed default manager no longer stops the consumer; new doctrine.entity_manager option. See [UPGRADING](https://github.com/nowo-tech/MessengerMonitorKitBundle/blob/v1.1.0/docs/UPGRADING.md#to-110).
-
 
 ### Fixed
 
