@@ -16,6 +16,9 @@
 The bundle now accepts `zenstruck/messenger-monitor-bundle` **^0.6 || ^0.7**. Hosts on 0.6 change nothing:
 `composer update nowo-tech/messenger-monitor-kit-bundle` keeps zenstruck 0.6.
 
+If your root `composer.json` requires `zenstruck/messenger-monitor-bundle` `^0.6` directly, widen it to
+`^0.6 || ^0.7` first. Otherwise `composer update … --with-dependencies` stays on 0.6.
+
 To move to zenstruck 0.7:
 
 ```bash
@@ -24,7 +27,8 @@ composer update nowo-tech/messenger-monitor-kit-bundle zenstruck/messenger-monit
 
 - zenstruck 0.7 maps `ProcessedMessage::$description` as `text` instead of `string` (`VARCHAR(255)`); the bundle
   entity (and a host entity extending zenstruck's model) inherits it. Generate and run a Doctrine migration
-  (`doctrine:migrations:diff`) **before** restarting the Messenger workers, on the connection of the history entity
+  (`doctrine:migrations:diff`, or `doctrine:migrations:diff --em=<name>` when `doctrine.entity_manager` is set)
+  **before** restarting the Messenger workers, on the connection of the history entity
   (`doctrine.entity_manager` when set). A host entity that overrides the `description` mapping must drop the override
   or make it `text`. Under 0.6 a description over 255 characters could fail the history insert on strict databases.
 - On MySQL / MariaDB the `VARCHAR(255)` → `LONGTEXT` change rebuilds (copies) the history table and blocks inserts
