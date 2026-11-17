@@ -7,7 +7,9 @@ All notable changes to this project are documented here. The format follows
 
 - [Unreleased](#unreleased)
   - [Changed](#changed)
+  - [Demo](#demo)
   - [Documentation](#documentation)
+  - [Tests](#tests)
 - [1.1.0 - 2026-11-11](#110---2026-11-11)
   - [Fixed](#fixed)
   - [Added](#added)
@@ -27,12 +29,20 @@ All notable changes to this project are documented here. The format follows
   change nothing; on 0.7 the history `description` column becomes `TEXT` (long descriptions are stored instead of
   failing the insert on strict databases) and needs a migration, see [UPGRADING](UPGRADING.md#unreleased). The lock,
   the demo and CI run 0.7; a CI job keeps testing 0.6.
+
+### Demo
+
 - Demo uses the UiKit base style (REQ-DEMO-014)
-- docs: demo screenshots regenerated on the UiKit base style
+- Demo screenshots regenerated on the UiKit base style
 
 ### Documentation
 
 - Table of contents in the changelog and the worker audit; Spec Kit inventory maps the three 1.1.0 files (82/82); README coverage counts refreshed (REQ sweep 2026-11-16)
+- INSTALLATION: a table created under zenstruck 0.6 or earlier needs the `description` migration on 0.7; `--em=<name>` for a dedicated history manager; UPGRADING: widen a direct `^0.6` root constraint first; README UiKitBundle `^2.21` matches composer.json
+
+### Tests
+
+- Kept-alive history test: 1,000 messages recorded in one worker process (#15)
 
 ## [1.1.0] - 2026-11-11
 

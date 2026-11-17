@@ -68,7 +68,17 @@ php bin/console doctrine:migrations:migrate
 
 Hosts that already have a zenstruck history entity keep it: set `zenstruck_messenger_monitor.storage.orm.entity_class`
 yourself and the kit uses that entity (the batched purge reads its table and columns from the Doctrine metadata). The
-table layout is zenstruck's, so an existing table needs no migration.
+table layout is zenstruck's. A table created under zenstruck 0.7 needs no migration, but on zenstruck 0.7 a table
+created under 0.6 or earlier needs the `description` `VARCHAR(255)` → `TEXT` migration (generate it with
+`doctrine:migrations:diff`); see [UPGRADING](UPGRADING.md#unreleased).
+
+When `doctrine.entity_manager` is set, the history entity lives on that manager: generate and run the migration on its
+connection:
+
+```bash
+php bin/console doctrine:migrations:diff --em=<name>
+php bin/console doctrine:migrations:migrate --em=<name>
+```
 
 ## Routes and security
 
