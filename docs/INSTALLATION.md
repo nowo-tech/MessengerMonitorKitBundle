@@ -18,7 +18,7 @@
 - `symfony/messenger` with at least one transport; a **listable** failure transport (Doctrine or Redis) for the
   failed message pages and the retry actions.
 - Doctrine ORM (`doctrine/doctrine-bundle`, `doctrine/orm`) for the history (zenstruck ORM storage).
-- [zenstruck/messenger-monitor-bundle](https://github.com/zenstruck/messenger-monitor-bundle) `^0.6` (installed as a
+- [zenstruck/messenger-monitor-bundle](https://github.com/zenstruck/messenger-monitor-bundle) `^0.6 || ^0.7` (installed as a
   dependency), [UiKitBundle](https://github.com/nowo-tech/UiKitBundle) and
   [FormKitBundle](https://github.com/nowo-tech/FormKitBundle) (dependencies).
 - `symfony/security-bundle` for the admin UI (unless `security.allow_unauthenticated` in dev / demo only).

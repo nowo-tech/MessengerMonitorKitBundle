@@ -23,6 +23,10 @@ All notable changes to this project are documented here. The format follows
 
 ### Changed
 
+- `zenstruck/messenger-monitor-bundle` constraint widened to `^0.6 || ^0.7` (supersedes Dependabot #20): 0.6 hosts
+  change nothing; on 0.7 the history `description` column becomes `TEXT` (long descriptions are stored instead of
+  failing the insert on strict databases) and needs a migration, see [UPGRADING](UPGRADING.md#unreleased). The lock,
+  the demo and CI run 0.7; a CI job keeps testing 0.6.
 - Demo uses the UiKit base style (REQ-DEMO-014)
 - docs: demo screenshots regenerated on the UiKit base style
 

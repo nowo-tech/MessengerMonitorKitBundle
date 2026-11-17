@@ -87,6 +87,39 @@ jobs:
         run: composer test
 
 
+  # Lowest supported zenstruck/messenger-monitor-bundle (composer.json: ^0.6 || ^0.7; the lock has 0.7).
+  test-zenstruck-lowest:
+    name: PHP 8.4 - Symfony 7.4 (lock) - zenstruck 0.6
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: json, pdo_sqlite, sodium
+          coverage: pcov
+          tools: composer:v2
+
+      # No platform override: the lock (Symfony 7.4) is resolved for config.platform.php 8.2.0 and installs on 8.4;
+      # PHPStan infers its PHP version from that platform, as in the PHPStan job.
+      - name: Install dependencies with zenstruck/messenger-monitor-bundle 0.6
+        run: |
+          composer install --prefer-dist --no-progress --no-interaction
+          composer update zenstruck/messenger-monitor-bundle zenstruck/collection --with "zenstruck/messenger-monitor-bundle:~0.6.0" --no-interaction --prefer-dist --no-progress
+          composer show zenstruck/messenger-monitor-bundle | grep -E '^versions'
+
+      - name: Run tests
+        env:
+          SYMFONY_DEPRECATIONS_HELPER: max[direct]=0
+        run: composer test
+
+      - name: Run PHPStan
+        run: composer phpstan
+
   code-style:
     name: Code Style
     runs-on: ubuntu-latest
