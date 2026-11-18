@@ -67,8 +67,8 @@ A retry:
    `nowo_mmk|<route>|<transport>|<id>`, `all` for the batch actions) and a **failure** transport (`failure_transports`,
    else Symfony's failure transports, else names holding a `fail` / `failed` / `failure` word) — any other transport
    answers 404;
-2. locks `transport + id` (with `symfony/lock`) and looks the message up again inside the lock — a double submit or a
-   second admin gets "no longer on the failure transport" / "being handled";
+2. locks `transport + id` (`retry.lock_factory`, always on since 1.3.0) and looks the message up again inside the
+   lock — a double submit or a second admin gets "no longer on the failure transport" / "being handled";
 3. sends the envelope back to the transport named by its `SentToFailureTransportStamp` (or `retry.fallback_transport`
    when that transport is gone; otherwise it stays parked), through the routable bus, **without** the failure /
    received / transport-name / transport-id stamps and tagged `retry` + `manual`;
