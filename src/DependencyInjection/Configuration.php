@@ -71,6 +71,7 @@ final class Configuration implements ConfigurationInterface
         $this->addTransportFactories($children->arrayNode('transport_factories'));
         $this->addWebUi($children->arrayNode('web_ui'));
         $this->addSecurity($children->arrayNode('security'));
+        $this->addConflictResponse($children->arrayNode('conflict_response'));
         $children->end();
 
         return $treeBuilder;
@@ -233,7 +234,30 @@ final class Configuration implements ConfigurationInterface
                     ->info('Message classes (or parents) whose handlers may have partially run: the retry asks for a stronger confirmation.')
                     ->scalarPrototype()->cannotBeEmpty()->end()
                 ->end()
-                ->floatNode('lock_ttl')->info('Seconds a retry / removal of one message is locked (needs symfony/lock).')->defaultValue(30.0)->min(1.0)->max(600.0)->end()
+                ->floatNode('lock_ttl')->info('Seconds a retry / removal of one message is locked.')->defaultValue(30.0)->min(1.0)->max(600.0)->end()
+                ->scalarNode('lock_factory')
+                    ->info('Since 1.3.0: service id of the Symfony LockFactory that serialises retries / removals of one message. Default lock.factory (framework.lock); when that service does not exist, a local flock store (one host only). Several servers: point it at a factory with a shared store (Redis, PostgreSQL, DBAL).')
+                    ->defaultValue('lock.factory')
+                    ->cannotBeEmpty()
+                ->end()
+            ->end();
+    }
+
+    private function addConflictResponse(ArrayNodeDefinition $node): void
+    {
+        $node
+            ->info('Since 1.3.0 (REQ-RUNTIME-003 rule 6): answer of a bundle route to a lock conflict (deadlock, lock wait timeout, serialization failure): 409 + Retry-After + CONFLICT_001 when nothing was committed, 409 + CONFLICT_002 without Retry-After when part of the request was. X-Conflict-Code carries the code.')
+            ->addDefaultsIfNotSet()
+            ->children()
+                ->enumNode('status')
+                    ->values([null, 409, 503])
+                    ->defaultNull()
+                    ->info('409 or 503. Null (default): nowo_transaction_doctrine.conflict_response.status when NowoTransactionDoctrineBundle is registered, else 409.')
+                ->end()
+                ->booleanNode('error_page')
+                    ->defaultFalse()
+                    ->info('Render the answer with your error page (an HttpException with the status, X-Conflict-Code and, for CONFLICT_001, Retry-After) instead of the platform conflict answer (JSON with "code", or the "try again" page).')
+                ->end()
             ->end();
     }
 

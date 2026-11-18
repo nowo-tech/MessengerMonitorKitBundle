@@ -6,8 +6,12 @@ namespace Nowo\MessengerMonitorKitBundle\Tests\Unit\Doctrine;
 
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager;
+use Doctrine\DBAL\Exception\DeadlockException;
+use Doctrine\DBAL\Exception\LockWaitTimeoutException;
 use InvalidArgumentException;
 use Nowo\MessengerMonitorKitBundle\Doctrine\KeysetDeleter;
+use Nowo\MessengerMonitorKitBundle\Tests\Support\DbalErrors;
+use Nowo\TransactionDoctrine\WriteUnit\ConcurrencyConflict;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -40,6 +44,37 @@ final class KeysetDeleterTest extends TestCase
         $result = (new KeysetDeleter($this->connection(10)))->delete('t', 'id', '', [], [], 5, 2);
         self::assertSame(10, $result->deleted);
         self::assertFalse($result->complete, 'the cap stops before proving no row is left');
+    }
+
+    #[Test]
+    public function aLockConflictAfterTheFirstBatchIsAPartialCommit(): void
+    {
+        $connection = $this->createMock(Connection::class);
+        $connection->method('getDatabasePlatform')->willReturn($this->connection(0)->getDatabasePlatform());
+        $connection->method('fetchFirstColumn')->willReturnOnConsecutiveCalls([1, 2], [3, 4]);
+        $calls = 0;
+        $connection->method('executeStatement')->willReturnCallback(static function () use (&$calls): int {
+            return ++$calls === 1 ? 2 : throw DbalErrors::deadlock();
+        });
+
+        try {
+            (new KeysetDeleter($connection))->delete('t', 'id', '', [], [], 2);
+            self::fail('A conflict was expected.');
+        } catch (ConcurrencyConflict $e) {
+            self::assertTrue($e->committed);
+            self::assertInstanceOf(DeadlockException::class, $e->getPrevious());
+        }
+    }
+
+    #[Test]
+    public function aLockConflictOnTheFirstBatchIsRethrownAsItIs(): void
+    {
+        $connection = $this->createMock(Connection::class);
+        $connection->method('getDatabasePlatform')->willReturn($this->connection(0)->getDatabasePlatform());
+        $connection->method('fetchFirstColumn')->willThrowException(DbalErrors::lockWaitTimeout());
+
+        $this->expectException(LockWaitTimeoutException::class);
+        (new KeysetDeleter($connection))->delete('t', 'id', '', [], [], 2);
     }
 
     #[Test]

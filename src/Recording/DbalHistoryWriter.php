@@ -45,22 +45,31 @@ final readonly class DbalHistoryWriter
      */
     public function save(Envelope $envelope, Results $results, ?Throwable $exception = null): void
     {
-        $metadata = $this->metadata();
+        $manager  = $this->manager();
+        $metadata = $manager->getClassMetadata($this->entityClass);
         $entity   = new ($this->entityClass)($envelope, $results, $exception);
 
         $row   = [];
         $types = [];
         foreach ($metadata->getFieldNames() as $field) {
+            $column = $metadata->getColumnName($field);
             if ($metadata->isIdentifier($field) && $metadata->usesIdGenerator()) {
+                if ($metadata->idGenerator->isPostInsertGenerator()) {
+                    continue; // identity / auto-increment: the database assigns it
+                }
+                // A pre-insert generator (a PostgreSQL sequence: ORM 3 on DBAL 3 maps AUTO to SEQUENCE) has no column
+                // default, so the id is fetched here, as the ORM does before its own INSERT (1.3.0).
+                $row[$column]   = $metadata->idGenerator->generateId($manager, $entity);
+                $types[$column] = $metadata->getTypeOfField($field) ?? 'integer';
+
                 continue;
             }
 
-            $column         = $metadata->getColumnName($field);
             $row[$column]   = $metadata->getFieldValue($entity, $field);
             $types[$column] = $metadata->getTypeOfField($field) ?? 'string';
         }
 
-        $connection = $this->connection();
+        $connection = $manager->getConnection();
         $this->inSavepoint($connection, static function () use ($connection, $metadata, $row, $types): void {
             $connection->insert($metadata->getTableName(), $row, $types);
         });

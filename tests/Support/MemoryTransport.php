@@ -10,6 +10,7 @@ use Symfony\Component\Messenger\Stamp\TransportMessageIdStamp;
 use Symfony\Component\Messenger\Transport\Receiver\ListableReceiverInterface;
 use Symfony\Component\Messenger\Transport\Receiver\MessageCountAwareInterface;
 use Symfony\Component\Messenger\Transport\TransportInterface;
+use Throwable;
 
 use function array_slice;
 use function array_values;
@@ -30,6 +31,11 @@ final class MemoryTransport implements TransportInterface, ListableReceiverInter
 
     public bool $failReject = false;
 
+    /** Thrown by reject() once `$rejectsBeforeError` rejects succeeded (null = never). */
+    public ?Throwable $rejectError = null;
+
+    public int $rejectsBeforeError = 0;
+
     private int $next = 1;
 
     public function get(): iterable
@@ -45,6 +51,9 @@ final class MemoryTransport implements TransportInterface, ListableReceiverInter
     {
         if ($this->failReject) {
             throw new RuntimeException('reject failed');
+        }
+        if ($this->rejectError instanceof Throwable && $this->rejectsBeforeError-- <= 0) {
+            throw $this->rejectError;
         }
         $id = (string) $envelope->last(TransportMessageIdStamp::class)?->getId();
         unset($this->envelopes[$id]);
