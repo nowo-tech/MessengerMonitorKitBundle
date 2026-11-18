@@ -216,9 +216,18 @@ jobs:
       - name: Igor worker-state audit (REQ-CS-008)
         run: composer igor
 
+  # REQ-RUNTIME-003: the real-database job (required check). Two-connection race tests (retry versus remove / retry,
+  # lock waits answering CONFLICT_001 / CONFLICT_002, purge partial commit) and the history writer, on MySQL 8.4,
+  # MariaDB 11.4 and PostgreSQL 16, with DBAL 3 and DBAL 4. Lock waits are capped at 1 s inside the tests.
   databases:
-    name: History writer on MySQL and PostgreSQL
+    name: Databases (MySQL 8.4, MariaDB 11.4, PostgreSQL 16, DBAL ${{ matrix.dbal }})
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    strategy:
+      fail-fast: false
+      matrix:
+        dbal: ['3', '4']
 
     services:
       mysql:
@@ -230,8 +239,17 @@ jobs:
         options: >-
           --health-cmd="mysqladmin ping -h 127.0.0.1"
           --health-interval=5s --health-timeout=5s --health-retries=20
+      mariadb:
+        image: mariadb:11.4
+        env:
+          MARIADB_ALLOW_EMPTY_ROOT_PASSWORD: '1'
+          MARIADB_DATABASE: app
+        ports: ['3307:3306']
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s --health-timeout=5s --health-retries=20
       postgres:
-        image: postgres:17-alpine
+        image: postgres:16-alpine
         env:
           POSTGRES_HOST_AUTH_METHOD: trust
           POSTGRES_DB: app
@@ -251,14 +269,59 @@ jobs:
           extensions: json, pdo_sqlite, pdo_mysql, pdo_pgsql, sodium
           tools: composer:v2
 
-      - name: Install dependencies
-        run: composer install --prefer-dist --no-progress --no-interaction
+      - name: Install dependencies (DBAL ${{ matrix.dbal }})
+        run: |
+          composer install --prefer-dist --no-progress --no-interaction
+          composer update doctrine/dbal --with "doctrine/dbal:^${{ matrix.dbal }}" --with-all-dependencies --prefer-dist --no-progress --no-interaction
+          composer show doctrine/dbal | grep -E '^versions'
 
-      - name: DbalHistoryWriter on SQLite, MySQL and PostgreSQL (rule 6, savepoints)
+      - name: Race, conflict and history-writer tests on MySQL, MariaDB and PostgreSQL
         env:
-          NOWO_TEST_MYSQL_URL: mysql://root@127.0.0.1:3306/app?serverVersion=8.4.0
-          NOWO_TEST_PGSQL_URL: pgsql://postgres@127.0.0.1:5432/app?serverVersion=17
-        run: vendor/bin/phpunit --no-coverage --filter DbalHistoryWriterTest
+          NOWO_TEST_MYSQL_URL: mysql://root@127.0.0.1:3306/app?serverVersion=8.4.0&charset=utf8mb4
+          NOWO_TEST_MARIADB_URL: mysql://root@127.0.0.1:3307/app?serverVersion=11.4.0-MariaDB&charset=utf8mb4
+          NOWO_TEST_PGSQL_URL: pgsql://postgres@127.0.0.1:5432/app?serverVersion=16&charset=utf8
+        run: vendor/bin/phpunit --no-coverage --fail-on-skipped --filter 'FailedMessageRaceTest|DbalHistoryWriterTest'
+
+  # Dependency floor: the code must work with the LOWEST nowo-tech/transaction-* versions composer.json allows (a host
+  # can run `composer update nowo-tech/messenger-monitor-kit-bundle` without updating them), and the demo lock must
+  # install what the bundle requires (the demo installs from its lock, so a requirement added later is never installed
+  # and Demo smoke fails with "class not found").
+  deps-floor:
+    name: Dependency floor (nowo-tech/transaction-* lowest, demo lock)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Demo lock satisfies the bundle's nowo-tech requirements
+        run: python3 .scripts/check-demo-lock.py . --only 'nowo-tech/*'
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: json, pdo_sqlite, sodium
+          tools: composer:v2
+
+      - name: Install dependencies
+        run: |
+          composer config platform.php 8.4.1
+          composer update --prefer-dist --no-progress --no-interaction
+
+      - name: Downgrade nowo-tech/transaction-* to the lowest allowed versions
+        run: |
+          composer update 'nowo-tech/transaction-*' --prefer-lowest --prefer-dist --no-progress --no-interaction
+          composer show 'nowo-tech/transaction-*'
+
+      - name: PHPStan at the floor
+        run: composer phpstan
+
+      - name: Unit and integration suites at the floor
+        timeout-minutes: 10
+        env:
+          SYMFONY_DEPRECATIONS_HELPER: max[direct]=0
+        run: vendor/bin/phpunit --no-coverage
 
   coverage:
     name: Code Coverage
