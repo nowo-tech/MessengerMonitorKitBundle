@@ -17,6 +17,7 @@
 - [Usage recommendations in worker mode](#usage-recommendations-in-worker-mode)
 - [Re-audit triggers](#re-audit-triggers)
 - [Kept-alive kernel, reset false (1.1.0)](#kept-alive-kernel-reset-false-110)
+- [Concurrency (1.3.0)](#concurrency-130)
 
 ## Execution model assumed
 
@@ -86,3 +87,12 @@ persistent connection, or any read of `$_SERVER` / `$_ENV` / static state at run
 
 Rule 7: the bundle never clears the host's default EntityManager; history rows are written through `DbalHistoryWriter` (no
 entity enters the host manager), and only the dedicated manager is recovered and cleared.
+
+## Concurrency (1.3.0)
+
+Simultaneous writes (two admins, a worker and an admin, a double submit) are covered by
+[CONCURRENCY.md](CONCURRENCY.md) (REQ-RUNTIME-003): the write-path table, the conflict codes and the host options. The
+1.3.0 services are stateless: `MessengerMonitorConflictListener` (`readonly`, everything per call comes from the
+event), `PartialCommit` (static, no state), the two compiler passes (build time only). The retry lock factory is the
+host's `lock.factory` (or a bundle-owned flock factory); a lock is created and released per action, never kept.
+

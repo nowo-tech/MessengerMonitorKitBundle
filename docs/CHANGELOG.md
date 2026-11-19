@@ -6,23 +6,61 @@ All notable changes to this project are documented here. The format follows
 ## Table of contents
 
 - [[Unreleased]](#unreleased)
-- [[1.2.0] - 2026-11-17](#120---2026-11-17)
+  - [Added](#added)
   - [Changed](#changed)
+  - [Fixed](#fixed)
+- [[1.2.0] - 2026-11-17](#120---2026-11-17)
+  - [Changed](#changed-1)
   - [Demo](#demo)
   - [Documentation](#documentation)
   - [Tests](#tests)
 - [[1.1.0] - 2026-11-11](#110---2026-11-11)
-  - [Fixed](#fixed)
-  - [Added](#added)
-- [[1.0.1] - 2026-11-01](#101---2026-11-01)
-  - [Changed](#changed-1)
   - [Fixed](#fixed-1)
+  - [Added](#added-1)
+- [[1.0.1] - 2026-11-01](#101---2026-11-01)
+  - [Changed](#changed-2)
+  - [Fixed](#fixed-2)
   - [Documentation](#documentation-1)
 - [[1.0.0] - 2026-11-01](#100---2026-11-01)
-  - [Added](#added-1)
+  - [Added](#added-2)
   - [Security](#security)
 
 ## [Unreleased]
+
+### Added
+
+- **Conflict answer (REQ-RUNTIME-003 rule 6).** A lock conflict (deadlock, lock wait timeout, serialization failure)
+  on a bundle route answers **409** with `X-Conflict-Code`: `CONFLICT_001` and `Retry-After` when nothing was
+  committed, `CONFLICT_002` without `Retry-After` when part of the request was (a retry whose message was already sent
+  back, a batch or a purge after its first step, a commit earlier in the request, a Messenger handler that already
+  ran). Before, it was a 500. JSON / XHR requests get `{"error", "code", "message"}`, pages the "try again" page.
+  Options `conflict_response.status` (`409` | `503`) and `conflict_response.error_page`. Unique violations and lost
+  connections are not mapped. See [CONCURRENCY.md](CONCURRENCY.md).
+- `retry.lock_factory`: the `LockFactory` service of the per-message retry / removal lock (default `lock.factory`;
+  a local flock store when it does not exist). Name a factory on a shared store when several servers run the admin UI.
+- `docs/CONCURRENCY.md`: write paths, conflict codes, host options and residual risks.
+- Tests: two-connection race tests on MySQL 8.4, MariaDB 11.4 and PostgreSQL 16 (retry versus remove, retry versus
+  retry, lock waits answering `CONFLICT_001` / `CONFLICT_002`, purge partial commit); conflict mapping end to end.
+- CI: the real-database job **Databases (MySQL 8.4, MariaDB 11.4, PostgreSQL 16, DBAL 3 / 4)** (MariaDB and DBAL 3
+  added; it replaces "History writer on MySQL and PostgreSQL" as the required check), and the **Dependency floor** job
+  (lowest `nowo-tech/transaction-*`, demo lock freshness, `.scripts/check-demo-lock.py`).
+
+### Changed
+
+- Requires `symfony/lock` (was suggested) and `nowo-tech/transaction-doctrine` ^1.6. The retry / removal lock is
+  always on: two admins (or a double submit) can no longer send the same failed message back twice, nor retry a
+  message another admin is removing.
+- A lock conflict after a committed step of a retry, a batch or a purge is thrown as a committed
+  `Nowo\TransactionDoctrine\WriteUnit\ConcurrencyConflict` (the database error is its previous exception). Code that
+  calls `FailedMessageRetrier` or `HistoryPurger` directly and catches DBAL exceptions should catch
+  `Nowo\TransactionContract\TransientStorageFailure` too.
+- Demo: lock refreshed to install transaction-doctrine 1.6 (and symfony/security-http 8.1.11).
+
+### Fixed
+
+- History rows on PostgreSQL with DBAL 3: when the history id uses a pre-insert generator (a sequence, ORM 3's `AUTO`
+  on DBAL 3), the DBAL writer now fetches the id from the generator; the insert failed with a NOT NULL violation.
+- A deadlock or lock wait timeout on a bundle admin action answered a 500 (contention only, no data loss).
 
 ## [1.2.0] - 2026-11-17
 

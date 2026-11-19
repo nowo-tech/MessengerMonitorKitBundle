@@ -14,6 +14,37 @@
 
 ## Unreleased
 
+From **1.2.x**:
+
+```bash
+composer update nowo-tech/messenger-monitor-kit-bundle --with-dependencies
+```
+
+- **New requirements.** `symfony/lock` and `nowo-tech/transaction-doctrine` ^1.6 are now installed with the bundle.
+  You do not need to register NowoTransactionDoctrineBundle; when it is registered, the bundle follows its
+  `conflict_response.status`, template and translations.
+- **The retry lock is always on.** It uses `lock.factory` (framework.lock, on by default with symfony/lock), else a
+  local flock store. With several servers, point `nowo_messenger_monitor_kit.retry.lock_factory` at a factory with a
+  shared store ([CONCURRENCY.md](CONCURRENCY.md#host-options)). A `retry.lock_factory` that names a missing service
+  fails the container build.
+- **409 on lock conflicts.** A deadlock or lock wait timeout on a bundle route answers 409 + `X-Conflict-Code`
+  (`CONFLICT_001` with `Retry-After`, or `CONFLICT_002` without) instead of a 500. To answer 503 instead:
+
+  ```yaml
+  nowo_messenger_monitor_kit:
+      conflict_response:
+          status: 503
+  ```
+
+  To render it with your own error page, set `conflict_response.error_page: true`.
+- **Exceptions of direct calls.** `FailedMessageRetrier` (`retry`, `retryAll`, `discardAll`) and `HistoryPurger` /
+  `KeysetDeleter` throw a committed `Nowo\TransactionDoctrine\WriteUnit\ConcurrencyConflict` (a
+  `Nowo\TransactionContract\TransientStorageFailure`) when a lock conflict stops them after a committed step; the
+  database error is its previous exception. Before any committed step they throw the original error, as before.
+- **Branch protection.** The required real-database check is now named
+  "Databases (MySQL 8.4, MariaDB 11.4, PostgreSQL 16, DBAL 3)" / "… DBAL 4" (was "History writer on MySQL and
+  PostgreSQL"). Only relevant to forks that copy the protection.
+
 ## To 1.2.0
 
 From **1.1.0**:

@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Nowo\MessengerMonitorKitBundle;
 
+use Nowo\MessengerMonitorKitBundle\DependencyInjection\Compiler\ConflictResponsePass;
 use Nowo\MessengerMonitorKitBundle\DependencyInjection\Compiler\CsrfProtectionPass;
 use Nowo\MessengerMonitorKitBundle\DependencyInjection\Compiler\HistoryEntityManagerPass;
 use Nowo\MessengerMonitorKitBundle\DependencyInjection\Compiler\HistoryStoragePass;
 use Nowo\MessengerMonitorKitBundle\DependencyInjection\Compiler\MessengerIntegrationPass;
+use Nowo\MessengerMonitorKitBundle\DependencyInjection\Compiler\RetryLockPass;
 use Nowo\MessengerMonitorKitBundle\DependencyInjection\Compiler\TwigPathsPass;
 use Nowo\MessengerMonitorKitBundle\DependencyInjection\Compiler\UnauthenticatedAccessPass;
 use Nowo\MessengerMonitorKitBundle\DependencyInjection\NowoMessengerMonitorKitExtension;
@@ -36,7 +38,7 @@ final class NowoMessengerMonitorKitBundle extends Bundle
 
     /**
      * Registers the compiler passes: Twig paths, CSRF fail-closed guard, demo-only unauthenticated access, history
-     * storage decoration and the decoding-failure retry strategies.
+     * storage decoration, the decoding-failure retry strategies, the conflict answer and the retry lock factory.
      */
     public function build(ContainerBuilder $container): void
     {
@@ -46,6 +48,9 @@ final class NowoMessengerMonitorKitBundle extends Bundle
         $container->addCompilerPass(new UnauthenticatedAccessPass());
         $container->addCompilerPass(new HistoryStoragePass());
         $container->addCompilerPass(new MessengerIntegrationPass());
+        // 1.3: REQ-RUNTIME-003 — the conflict answer of the bundle routes, and the retry lock factory.
+        $container->addCompilerPass(new ConflictResponsePass());
+        $container->addCompilerPass(new RetryLockPass());
         // 1.1: fail fast on an unknown doctrine.entity_manager, then keep the history entity on that manager only.
         $container->addCompilerPass(new HistoryEntityManagerPass(checkOnly: true), PassConfig::TYPE_BEFORE_OPTIMIZATION, 10);
         $container->addCompilerPass(new HistoryEntityManagerPass(), PassConfig::TYPE_BEFORE_OPTIMIZATION, -10);

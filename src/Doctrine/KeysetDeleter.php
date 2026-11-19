@@ -6,7 +6,9 @@ namespace Nowo\MessengerMonitorKitBundle\Doctrine;
 
 use Doctrine\DBAL\Connection;
 use InvalidArgumentException;
+use Nowo\MessengerMonitorKitBundle\Concurrency\PartialCommit;
 use Nowo\MessengerMonitorKitBundle\History\PurgeResult;
+use Throwable;
 
 use function array_fill;
 use function array_merge;
@@ -23,6 +25,9 @@ use function sprintf;
  *
  * Identifiers come from Doctrine metadata (never from user input) and are validated as plain SQL identifiers; values
  * are bound parameters.
+ *
+ * Since 1.3.0 (REQ-RUNTIME-003 rule 6): a lock conflict after the first deleted batch is thrown as a committed
+ * conflict ({@see PartialCommit}, `CONFLICT_002`); before it, the original failure is thrown (`CONFLICT_001`).
  */
 final readonly class KeysetDeleter
 {
@@ -52,20 +57,16 @@ final readonly class KeysetDeleter
         $last      = null;
 
         while (true) {
-            $select = sprintf('SELECT %2$s FROM %1$s WHERE %3$s%4$s ORDER BY %2$s ASC', $table, $idColumn, $last === null ? '1 = 1' : $idColumn . ' > ?', $condition);
-            $ids    = $this->connection->fetchFirstColumn(
-                $this->connection->getDatabasePlatform()->modifyLimitQuery($select, $batchSize),
-                $last === null ? $params : array_merge([$last], $params),
-                $last === null ? $types : $this->shiftTypes($types),
-            );
+            try {
+                [$ids, $count] = $this->batch($table, $idColumn, $condition, $params, $types, $batchSize, $last);
+            } catch (Throwable $e) {
+                throw $batches > 0 ? PartialCommit::conflict($e) : $e;
+            }
             if ($ids === []) {
                 return new PurgeResult($deleted, true);
             }
 
-            $deleted += (int) $this->connection->executeStatement(
-                sprintf('DELETE FROM %s WHERE %s IN (%s)', $table, $idColumn, implode(', ', array_fill(0, count($ids), '?'))),
-                $ids,
-            );
+            $deleted += $count;
             $last = end($ids);
             ++$batches;
 
@@ -76,6 +77,32 @@ final readonly class KeysetDeleter
                 return new PurgeResult($deleted, false);
             }
         }
+    }
+
+    /**
+     * Selects the next batch of ids after `$last` and deletes it.
+     *
+     * @param list<mixed> $params
+     * @param list<string> $types
+     *
+     * @return array{list<mixed>, int} the batch ids and the deleted row count
+     */
+    private function batch(string $table, string $idColumn, string $condition, array $params, array $types, int $batchSize, mixed $last): array
+    {
+        $select = sprintf('SELECT %2$s FROM %1$s WHERE %3$s%4$s ORDER BY %2$s ASC', $table, $idColumn, $last === null ? '1 = 1' : $idColumn . ' > ?', $condition);
+        $ids    = $this->connection->fetchFirstColumn(
+            $this->connection->getDatabasePlatform()->modifyLimitQuery($select, $batchSize),
+            $last === null ? $params : array_merge([$last], $params),
+            $last === null ? $types : $this->shiftTypes($types),
+        );
+        if ($ids === []) {
+            return [[], 0];
+        }
+
+        return [$ids, (int) $this->connection->executeStatement(
+            sprintf('DELETE FROM %s WHERE %s IN (%s)', $table, $idColumn, implode(', ', array_fill(0, count($ids), '?'))),
+            $ids,
+        )];
     }
 
     /**

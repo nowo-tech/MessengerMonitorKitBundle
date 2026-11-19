@@ -4,15 +4,20 @@ declare(strict_types=1);
 
 namespace Nowo\MessengerMonitorKitBundle\Tests\Unit\Retry;
 
+use Doctrine\DBAL\Exception\DeadlockException;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Nowo\MessengerMonitorKitBundle\Retry\BatchResult;
 use Nowo\MessengerMonitorKitBundle\Retry\FailedMessageRetrier;
 use Nowo\MessengerMonitorKitBundle\Retry\RetryOutcome;
 use Nowo\MessengerMonitorKitBundle\Retry\RetryStatus;
 use Nowo\MessengerMonitorKitBundle\Tests\Fixtures\DemoMessage;
 use Nowo\MessengerMonitorKitBundle\Tests\Fixtures\OptionalMessage;
+use Nowo\MessengerMonitorKitBundle\Tests\Support\DbalErrors;
 use Nowo\MessengerMonitorKitBundle\Tests\Support\MemoryTransport;
 use Nowo\MessengerMonitorKitBundle\Tests\Support\Monitor;
 use Nowo\MessengerMonitorKitBundle\Tests\Support\RecordingBus;
+use Nowo\TransactionDoctrine\ConflictCode;
+use Nowo\TransactionDoctrine\WriteUnit\ConcurrencyConflict;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
@@ -167,6 +172,81 @@ final class FailedMessageRetrierTest extends TestCase
 
         $this->expectException(RuntimeException::class);
         $this->retrier()->discard($this->failedInfo(), $id);
+    }
+
+    #[Test]
+    public function aLockConflictOnTheRejectAfterTheDispatchIsAPartialCommit(): void
+    {
+        $id                        = $this->park(new DemoMessage(), 'async');
+        $this->failed->rejectError = DbalErrors::lockWaitTimeout();
+
+        try {
+            $this->retrier()->retry($this->failedInfo(), $id);
+            self::fail('A conflict was expected.');
+        } catch (ConcurrencyConflict $e) {
+            self::assertTrue($e->committed, 'the message was already sent back');
+            self::assertSame(ConflictCode::Committed, ConflictCode::forFailure($e));
+            self::assertSame($this->failed->rejectError, $e->getPrevious());
+        }
+        self::assertCount(1, $this->bus->dispatched);
+    }
+
+    #[Test]
+    public function otherRejectFailuresAfterTheDispatchAreRethrownAsTheyAre(): void
+    {
+        $id                        = $this->park(new DemoMessage(), 'async');
+        $this->failed->rejectError = DbalErrors::uniqueViolation();
+
+        try {
+            $this->retrier()->retry($this->failedInfo(), $id);
+            self::fail('The failure was expected.');
+        } catch (UniqueConstraintViolationException $e) {
+            self::assertSame($this->failed->rejectError, $e);
+        }
+    }
+
+    #[Test]
+    public function aLockConflictOnTheFirstMessageOfABatchIsRetrySafe(): void
+    {
+        $this->park(new DemoMessage(), 'async');
+        $this->park(new DemoMessage('order-43'), 'async');
+        $this->failed->rejectError = DbalErrors::deadlock();
+
+        try {
+            $this->retrier()->discardAll($this->failedInfo(), 10);
+            self::fail('A conflict was expected.');
+        } catch (DeadlockException $e) {
+            self::assertSame(ConflictCode::RetrySafe, ConflictCode::forFailure($e), 'nothing was removed yet');
+        }
+        self::assertCount(2, $this->failed->envelopes);
+    }
+
+    #[Test]
+    public function aLockConflictAfterTheFirstMessageOfABatchIsAPartialCommit(): void
+    {
+        $this->park(new DemoMessage(), 'async');
+        $this->park(new DemoMessage('order-43'), 'async');
+        $this->failed->rejectError        = DbalErrors::deadlock();
+        $this->failed->rejectsBeforeError = 1;
+
+        try {
+            $this->retrier()->discardAll($this->failedInfo(), 10);
+            self::fail('A conflict was expected.');
+        } catch (ConcurrencyConflict $e) {
+            self::assertTrue($e->committed);
+        }
+        self::assertCount(1, $this->failed->envelopes, 'the first message was removed');
+
+        $this->failed->rejectError        = DbalErrors::deadlock();
+        $this->failed->rejectsBeforeError = 0;
+        $this->park(new DemoMessage('order-44'), 'async');
+        $this->failed->rejectsBeforeError = 1;
+        try {
+            $this->retrier()->retryAll($this->failedInfo(), 10);
+            self::fail('A conflict was expected.');
+        } catch (ConcurrencyConflict $e) {
+            self::assertTrue($e->committed);
+        }
     }
 
     #[Test]

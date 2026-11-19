@@ -6,9 +6,11 @@ namespace Nowo\MessengerMonitorKitBundle\Tests\Integration\Persistence;
 
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager;
+use Doctrine\DBAL\Platforms\PostgreSQLPlatform;
 use Doctrine\DBAL\Tools\DsnParser;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Id\AbstractIdGenerator;
 use Doctrine\ORM\Mapping\Driver\AttributeDriver;
 use Doctrine\ORM\Mapping\Driver\SimplifiedXmlDriver;
 use Doctrine\ORM\ORMSetup;
@@ -35,8 +37,8 @@ use function getenv;
 use const PHP_VERSION_ID;
 
 /**
- * {@see DbalHistoryWriter} on a real ORM + DBAL connection: SQLite always, MySQL / PostgreSQL when
- * `NOWO_TEST_MYSQL_URL` / `NOWO_TEST_PGSQL_URL` are set (CI database job).
+ * {@see DbalHistoryWriter} on a real ORM + DBAL connection: SQLite always, MySQL / MariaDB / PostgreSQL when
+ * `NOWO_TEST_MYSQL_URL` / `NOWO_TEST_MARIADB_URL` / `NOWO_TEST_PGSQL_URL` are set (CI database job).
  */
 final class DbalHistoryWriterTest extends TestCase
 {
@@ -47,6 +49,7 @@ final class DbalHistoryWriterTest extends TestCase
     {
         yield 'sqlite' => ['pdo-sqlite:///:memory:'];
         yield 'mysql' => [(string) getenv('NOWO_TEST_MYSQL_URL')];
+        yield 'mariadb' => [(string) getenv('NOWO_TEST_MARIADB_URL')];
         yield 'postgresql' => [(string) getenv('NOWO_TEST_PGSQL_URL')];
     }
 
@@ -114,6 +117,23 @@ final class DbalHistoryWriterTest extends TestCase
         self::assertSame(['before', 'after'], $connection->fetchFirstColumn('SELECT label FROM host_marker ORDER BY label DESC'));
     }
 
+    public function testAPreInsertIdGeneratorIsAskedForTheId(): void
+    {
+        // PostgreSQL on DBAL 3: ORM 3 maps AUTO to a sequence, whose column has no default (job "Databases", DBAL 3).
+        $em       = $this->entityManager('pdo-sqlite:///:memory:');
+        $metadata = $em->getClassMetadata(ProcessedMessage::class);
+        $metadata->setIdGenerator(new class extends AbstractIdGenerator {
+            public function generateId(EntityManagerInterface $em, ?object $entity): mixed
+            {
+                return 77;
+            }
+        });
+
+        $this->writer($em)->save($this->envelope(), new Results([]));
+
+        self::assertSame(77, (int) $em->getConnection()->fetchOne('SELECT id FROM messenger_processed_messages'));
+    }
+
     public function testFailsClearlyWithoutAManager(): void
     {
         $registry = $this->createStub(ManagerRegistry::class);
@@ -158,7 +178,7 @@ final class DbalHistoryWriterTest extends TestCase
     private function entityManager(string $url): EntityManagerInterface
     {
         if ($url === '') {
-            self::markTestSkipped('Database URL not set (NOWO_TEST_MYSQL_URL / NOWO_TEST_PGSQL_URL).');
+            self::markTestSkipped('Database URL not set (NOWO_TEST_MYSQL_URL / NOWO_TEST_MARIADB_URL / NOWO_TEST_PGSQL_URL).');
         }
 
         $base = dirname((string) (new ReflectionClass(BaseProcessedMessage::class))->getFileName(), 4);
@@ -179,6 +199,10 @@ final class DbalHistoryWriterTest extends TestCase
         $connection = $em->getConnection();
         foreach (['messenger_processed_messages', 'host_marker'] as $table) {
             $connection->executeStatement('DROP TABLE IF EXISTS ' . $table);
+        }
+        if ($connection->getDatabasePlatform() instanceof PostgreSQLPlatform) {
+            // DBAL 3 creates a separate sequence that DROP TABLE leaves behind (DBAL 4 uses an identity column).
+            $connection->executeStatement('DROP SEQUENCE IF EXISTS messenger_processed_messages_id_seq');
         }
         $connection->executeStatement('CREATE TABLE host_marker (label VARCHAR(16) NOT NULL)');
         (new SchemaTool($em))->createSchema([$em->getClassMetadata(ProcessedMessage::class)]);

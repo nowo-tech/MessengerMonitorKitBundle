@@ -46,7 +46,7 @@ data written by zenstruck's storage before redaction applies (failure messages a
 | Privilege escalation (viewer runs actions) | `manage_roles` (default = `access_roles`) checked in the controllers for every mutation, the settings page and payloads / results / failure messages / descriptions. |
 | CSRF on mutations | Every POST is a Symfony Form with CSRF (FormKit CSRF-only forms, `MonitorSettingsType`, `PurgeType`); each row / header action has its own token id `nowo_mmk\|<route>\|<transport>\|<message id or "all">` (`ActionForms`), so a token captured for one action cannot be replayed on another (a retry token for message 1 cannot remove all); invalid / missing tokens answer 403 or 422; `CsrfProtectionPass` refuses to compile the UI without form CSRF or the token manager (fail closed, P2). |
 | Acting on arbitrary transports | Retry / remove only on failure transports (`failure_transports`, else the receivers Symfony tags `is_failure_transport`, else a `fail` / `failed` / `failure` name word — set `failure_transports` explicitly when in doubt); any other transport is a 404. Retries go to the message's original transport (or the configured fallback) — never inline, never to an arbitrary transport chosen by the request. |
-| Duplicate side effects (double submit, two admins) | Per-message lock (`symfony/lock`) and re-lookup inside the lock; handled stamps kept so succeeded handlers do not run again; duplicate-risk classes get a stronger confirm and are skipped by "retry all" (retried one by one). |
+| Duplicate side effects (double submit, two admins) | Per-message lock (`symfony/lock`, always on since 1.3.0; [CONCURRENCY.md](CONCURRENCY.md)) and re-lookup inside the lock; handled stamps kept so succeeded handlers do not run again; duplicate-risk classes get a stronger confirm and are skipped by "retry all" (retried one by one). |
 | XSS through payloads / failure messages | Payloads are normalised by reflection into scalars (no getter, `__toString()` or property hook executed; raw values on PHP 8.4, virtual properties and uninitialised lazy objects skipped), JSON-encoded and printed with Twig auto-escaping in `<pre>`; no `|raw`; contract test asserts no inline handlers. |
 | Information disclosure (personal data, secrets) | Key-based masks (`password`, `pwd`, `token`, `key`, `dsn`, `email`, `phone`, `iban`, `dni`, `name`, `ip`, …), credential masks in free text (URL userinfo, `Bearer` values, `password=` / `token:` pairs, `sk_live_` / `ghp_` / `xoxb-` / `AKIA` keys, JWTs), e-mail, DNI / NIE and long-number masks, host redactors; payloads, results, failure messages and descriptions only for the manage area (viewers get metadata only); `payload.enabled: false` disables them; results redacted (or dropped with `store_results: false`) before they are stored. |
 | Deserialization | The kit never unserializes request data; envelopes are decoded by the host's Messenger serializer when transports are read. |
@@ -144,9 +144,10 @@ Fix details are listed under `Security` in the [CHANGELOG](CHANGELOG.md).
   `name`, `code`, `key`, `ip`, `pin` only as the whole name).
 - Redaction is pattern-based: names, addresses without a sensitive key name, or encoded data may pass. Add host
   redactors for domain fields, or disable payloads (`payload.enabled: false`).
-- Without `symfony/lock` two concurrent retries of the same message can both dispatch it in a narrow window (between
-  the dispatch and the reject; reproduced in the audit with a re-entrant bus); install `symfony/lock` with a shared
-  store when several admins use the UI.
+- Since 1.3.0 `symfony/lock` is required and the retrier always gets a lock factory (`retry.lock_factory`, default
+  `lock.factory`, else a local flock store). The default stores (flock, semaphore) serialise one host only: with
+  several servers, point `retry.lock_factory` at a factory with a shared store (Redis, PostgreSQL, DBAL), or two
+  concurrent retries of the same message on two servers can both dispatch it. See [CONCURRENCY.md](CONCURRENCY.md).
 - The failure transport name heuristic (`fail` / `failed` / `failure` as a name word) applies only when
   `failure_transports` is empty **and** Symfony tags no receiver `is_failure_transport`; set `failure_transports`
   explicitly when a queue name could match.

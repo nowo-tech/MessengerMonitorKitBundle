@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Nowo\MessengerMonitorKitBundle\Retry;
 
+use Nowo\MessengerMonitorKitBundle\Concurrency\PartialCommit;
 use Nowo\MessengerMonitorKitBundle\Payload\Redactor;
+use Nowo\TransactionDoctrine\WriteUnit\ConcurrencyConflict;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Lock\LockInterface;
@@ -35,9 +37,16 @@ use function sha1;
  * received stamp would handle it synchronously); handled stamps and the redelivery counter are kept, so handlers that
  * already succeeded do not run again and the transport retry policy is not restarted.
  *
- * Idempotency: with symfony/lock a retry / removal locks `transport + id`, then looks the message up again inside the
- * lock, so two admins (or a double submit) cannot dispatch it twice. Without a lock factory the second request finds
- * nothing once the first one rejected it; the remaining race window is documented.
+ * Idempotency: a retry / removal locks `transport + id`, then looks the message up again inside the lock, so two admins
+ * (or a double submit) cannot dispatch it twice, nor retry a message another admin is removing. Since 1.3.0 the bundle
+ * always passes a lock factory (`retry.lock_factory`, default `lock.factory`, else a local flock store); a retrier
+ * built without one keeps the documented race window (the second request finds nothing only once the first one
+ * rejected the message).
+ *
+ * Conflicts (since 1.3.0, REQ-RUNTIME-003 rule 6): a lock conflict after a committed step (the message was sent back
+ * but its reject failed, or an earlier message of a batch was handled) is thrown as a committed
+ * {@see ConcurrencyConflict} ({@see PartialCommit}), so the answer is
+ * `CONFLICT_002`; before any committed step the original failure is thrown (`CONFLICT_001`).
  */
 final readonly class FailedMessageRetrier
 {
@@ -163,7 +172,12 @@ final readonly class FailedMessageRetrier
                 $stamps[] = new TagStamp($tag);
             }
             $this->bus->dispatch(self::cleanEnvelope($envelope), $stamps);
-            $failed->get()->reject($envelope);
+            try {
+                $failed->get()->reject($envelope);
+            } catch (Throwable $e) {
+                // The message is already back on its transport: a lock conflict here is a partial commit.
+                throw PartialCommit::conflict($e);
+            }
 
             $this->logger?->info('Messenger monitor: failed message retried.', ['bundle' => 'messenger_monitor_kit', 'transport' => $failed->name(), 'id' => $queued->id(), 'type' => $type, 'target' => $target]);
 
@@ -193,7 +207,7 @@ final readonly class FailedMessageRetrier
     {
         $result = new BatchResult();
         foreach ($this->ids($failed, $limit) as $id) {
-            $result = $result->with($this->retry($failed, $id, skipDuplicateRisk: true));
+            $result = $result->with($this->batchStep($result, fn (): RetryOutcome => $this->retry($failed, $id, skipDuplicateRisk: true)));
         }
 
         return $result;
@@ -206,7 +220,7 @@ final readonly class FailedMessageRetrier
     {
         $result = new BatchResult();
         foreach ($this->ids($failed, $limit) as $id) {
-            $result = $result->with($this->discard($failed, $id));
+            $result = $result->with($this->batchStep($result, fn (): RetryOutcome => $this->discard($failed, $id)));
         }
 
         return $result;
@@ -222,6 +236,20 @@ final readonly class FailedMessageRetrier
             ->withoutAll(ReceivedStamp::class)
             ->withoutAll(TransportNamesStamp::class)
             ->withoutAll(TransportMessageIdStamp::class);
+    }
+
+    /**
+     * One message of a batch: once an earlier message was handled, a lock conflict is a partial commit.
+     *
+     * @param callable(): RetryOutcome $step
+     */
+    private function batchStep(BatchResult $sofar, callable $step): RetryOutcome
+    {
+        try {
+            return $step();
+        } catch (Throwable $e) {
+            throw $sofar->done > 0 ? PartialCommit::conflict($e) : $e;
+        }
     }
 
     /**

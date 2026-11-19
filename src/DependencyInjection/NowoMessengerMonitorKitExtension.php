@@ -13,11 +13,14 @@ use Nowo\MessengerMonitorKitBundle\Controller\DashboardController;
 use Nowo\MessengerMonitorKitBundle\Controller\HistoryController;
 use Nowo\MessengerMonitorKitBundle\Controller\SettingsController;
 use Nowo\MessengerMonitorKitBundle\Controller\TransportsController;
+use Nowo\MessengerMonitorKitBundle\DependencyInjection\Compiler\ConflictResponsePass;
 use Nowo\MessengerMonitorKitBundle\DependencyInjection\Compiler\HistoryStoragePass;
 use Nowo\MessengerMonitorKitBundle\DependencyInjection\Compiler\MessengerIntegrationPass;
+use Nowo\MessengerMonitorKitBundle\DependencyInjection\Compiler\RetryLockPass;
 use Nowo\MessengerMonitorKitBundle\Doctrine\TablePrefixListener;
 use Nowo\MessengerMonitorKitBundle\Entity\ProcessedMessage;
 use Nowo\MessengerMonitorKitBundle\EventListener\MessengerMonitorAccessListener;
+use Nowo\MessengerMonitorKitBundle\EventListener\MessengerMonitorConflictListener;
 use Nowo\MessengerMonitorKitBundle\Form\HistoryFilterType;
 use Nowo\MessengerMonitorKitBundle\Form\MonitorSettingsType;
 use Nowo\MessengerMonitorKitBundle\Form\PurgeType;
@@ -149,7 +152,7 @@ final class NowoMessengerMonitorKitExtension extends Extension implements Prepen
         $config = $this->processConfiguration(new Configuration(), $configs);
         $this->assertLiteralBooleans($config);
 
-        /** @var array{history: array{bundle_entity: bool}, doctrine: array{table_prefix: string, entity_manager: string|null}, recording: array{enabled: bool, optional_message_classes: list<string>, record_optional: bool, check_interval: int, store_results: bool}, settings: array{store: string, cache_pool: string}, retention: array{auto_purge: bool, older_than: string, keep_failed: bool, min_interval: int}, purge: array{batch_size: int, max_batches_per_request: int}, retry: array{batch_limit: int, fallback_transport: string|null, duplicate_risk_classes: list<string>, lock_ttl: float}, failure_transports: list<string>, queue_depth: array{transports: list<string>}, health_probe: array{enabled: bool, name: string, pending_warn_at: int|null, pending_fail_at: int|null, failed_warn_at: int|null, failed_fail_at: int|null, critical: bool}, payload: array{enabled: bool, max_depth: int, max_items: int, max_string_length: int, max_nodes: int, max_bytes: int}, redaction: array{keys: list<string>, extra_keys: list<string>, mask: string, mask_emails: bool, mask_long_numbers: bool}, retry_strategy: array{no_retry_on_decoding_failure: list<string>}, transport_factories: array{amqp: array{enabled: bool, prefix: string}, doctrine: array{enabled: bool}, failed_dsn_env: array{enabled: bool, queue_env: string, redis_env: string}}, web_ui: array{enabled: bool, path_prefix: string, layout_template: string|null, templates: array<string, string>, per_page: int, transport_list_limit: int}, security: array{access_roles: list<string>, manage_roles: list<string>|null, access_checker: string|null, allow_unauthenticated: bool}} $config */
+        /** @var array{history: array{bundle_entity: bool}, doctrine: array{table_prefix: string, entity_manager: string|null}, recording: array{enabled: bool, optional_message_classes: list<string>, record_optional: bool, check_interval: int, store_results: bool}, settings: array{store: string, cache_pool: string}, retention: array{auto_purge: bool, older_than: string, keep_failed: bool, min_interval: int}, purge: array{batch_size: int, max_batches_per_request: int}, retry: array{batch_limit: int, fallback_transport: string|null, duplicate_risk_classes: list<string>, lock_ttl: float, lock_factory: string}, failure_transports: list<string>, queue_depth: array{transports: list<string>}, health_probe: array{enabled: bool, name: string, pending_warn_at: int|null, pending_fail_at: int|null, failed_warn_at: int|null, failed_fail_at: int|null, critical: bool}, payload: array{enabled: bool, max_depth: int, max_items: int, max_string_length: int, max_nodes: int, max_bytes: int}, redaction: array{keys: list<string>, extra_keys: list<string>, mask: string, mask_emails: bool, mask_long_numbers: bool}, retry_strategy: array{no_retry_on_decoding_failure: list<string>}, transport_factories: array{amqp: array{enabled: bool, prefix: string}, doctrine: array{enabled: bool}, failed_dsn_env: array{enabled: bool, queue_env: string, redis_env: string}}, web_ui: array{enabled: bool, path_prefix: string, layout_template: string|null, templates: array<string, string>, per_page: int, transport_list_limit: int}, security: array{access_roles: list<string>, manage_roles: list<string>|null, access_checker: string|null, allow_unauthenticated: bool}, conflict_response: array{status: int|null, error_page: bool}} $config */
         $webUi = $config['web_ui']['enabled'];
         if ($webUi && !$config['security']['allow_unauthenticated'] && !$this->hasSecurityBundle($container)) {
             throw new LogicException('NowoMessengerMonitorKitBundle: the admin UI requires symfony/security-bundle (or security.allow_unauthenticated: true in dev / demo only).');
@@ -170,6 +173,8 @@ final class NowoMessengerMonitorKitExtension extends Extension implements Prepen
         $container->setParameter('nowo_messenger_monitor_kit.web_ui.path_prefix', $config['web_ui']['path_prefix']);
         $container->setParameter('nowo_messenger_monitor_kit.security.allow_unauthenticated', $config['security']['allow_unauthenticated']);
         $container->setParameter(MessengerIntegrationPass::NO_RETRY_PARAMETER, $config['retry_strategy']['no_retry_on_decoding_failure']);
+        $container->setParameter(ConflictResponsePass::PARAMETER, $config['conflict_response']);
+        $container->setParameter(RetryLockPass::PARAMETER, $config['retry']['lock_factory']);
 
         $container->registerForAutoconfiguration(PayloadRedactorInterface::class)->addTag(NowoMessengerMonitorKitBundle::PAYLOAD_REDACTOR_TAG);
 
@@ -322,14 +327,14 @@ final class NowoMessengerMonitorKitExtension extends Extension implements Prepen
      */
     private function registerMessenger(ContainerBuilder $container, array $config): void
     {
-        /* @var array{retry: array{batch_limit: int, fallback_transport: string|null, duplicate_risk_classes: list<string>, lock_ttl: float}, failure_transports: list<string>, queue_depth: array{transports: list<string>}, transport_factories: array{amqp: array{enabled: bool, prefix: string}, doctrine: array{enabled: bool}, failed_dsn_env: array{enabled: bool, queue_env: string, redis_env: string}}} $config */
+        /* @var array{retry: array{batch_limit: int, fallback_transport: string|null, duplicate_risk_classes: list<string>, lock_ttl: float, lock_factory: string}, failure_transports: list<string>, queue_depth: array{transports: list<string>}, transport_factories: array{amqp: array{enabled: bool, prefix: string}, doctrine: array{enabled: bool}, failed_dsn_env: array{enabled: bool, queue_env: string, redis_env: string}}} $config */
         $container->setDefinition(FailedMessageRetrier::class, (new Definition(FailedMessageRetrier::class, [
             new Reference('zenstruck_messenger_monitor.transports'),
             new Reference('messenger.routable_message_bus'),
             $config['failure_transports'],
             $config['retry']['fallback_transport'],
             $config['retry']['duplicate_risk_classes'],
-            new Reference('lock.factory', ContainerInterface::NULL_ON_INVALID_REFERENCE),
+            new Reference(RetryLockPass::SERVICE),
             $config['retry']['lock_ttl'],
             new Reference('logger', ContainerInterface::NULL_ON_INVALID_REFERENCE),
             new Reference(Redactor::class),
@@ -446,6 +451,9 @@ final class NowoMessengerMonitorKitExtension extends Extension implements Prepen
             new Reference(AccessGuard::class),
             $webUi['path_prefix'],
         ]))->addTag('kernel.event_listener', ['event' => KernelEvents::REQUEST, 'method' => 'onKernelRequest', 'priority' => MessengerMonitorAccessListener::PRIORITY]));
+        // Since 1.3.0 (REQ-RUNTIME-003 rule 6): lock conflicts of the bundle routes; policy / responder set by ConflictResponsePass.
+        $container->setDefinition(MessengerMonitorConflictListener::class, (new Definition(MessengerMonitorConflictListener::class))
+            ->addTag('kernel.event_listener', ['event' => KernelEvents::EXCEPTION, 'method' => 'onKernelException', 'priority' => MessengerMonitorConflictListener::PRIORITY]));
 
         $storage = new Reference(HistoryStoragePass::STORAGE_ID);
         $common  = [

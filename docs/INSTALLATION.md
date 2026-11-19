@@ -29,10 +29,13 @@
 composer require nowo-tech/messenger-monitor-kit-bundle
 ```
 
+`symfony/lock` (serialises concurrent retries / removals) and `nowo-tech/transaction-doctrine` (the 409 conflict
+answer) are installed with the bundle since 1.3.0. With several servers, set `retry.lock_factory` to a factory with a
+shared store ([CONCURRENCY.md](CONCURRENCY.md)).
+
 Optional integrations:
 
 ```bash
-composer require symfony/lock                          # serialise concurrent retries / removals (recommended)
 composer require nowo-tech/instance-settings-bundle    # switches in an instance settings section
 composer require nowo-tech/health-kit-bundle           # queue depth as a readiness probe
 ```

@@ -54,7 +54,8 @@ nowo_messenger_monitor_kit:
         batch_limit: 50                # retry all / remove all (1..500)
         fallback_transport: null       # target when the original transport is gone
         duplicate_risk_classes: []     # stronger confirmation before a retry
-        lock_ttl: 30                   # seconds (needs symfony/lock)
+        lock_ttl: 30                   # seconds a retry / removal of one message is locked
+        lock_factory: lock.factory     # LockFactory service (shared store with several servers)
     failure_transports: []             # empty = Symfony's failure transports (is_failure_transport)
     queue_depth:
         transports: []                 # empty = every countable transport
@@ -103,6 +104,9 @@ nowo_messenger_monitor_kit:
         manage_roles: null             # null = access_roles
         access_checker: null           # service id of a MessengerMonitorAccessCheckerInterface
         allow_unauthenticated: false   # DEV / DEMO only, refused without kernel.debug
+    conflict_response:                 # 1.3: lock conflicts of the bundle routes (CONCURRENCY.md)
+        status: null                   # 409 | 503; null = transaction-doctrine's setting, else 409
+        error_page: false              # true = your error page renders the 409 / 503
 ```
 
 ## History storage
@@ -168,7 +172,10 @@ CLI: `nowo:messenger-monitor:purge --older-than=1-month [--include-failed]` (man
 | `retry.fallback_transport` | `null` | Target when the original transport no longer exists or is not a queue (scheduler, sync). `null` keeps the message parked ("not retryable"). |
 | `retry.batch_limit` | `50` | Messages handled by "retry all" / "remove all". |
 | `retry.duplicate_risk_classes` | `[]` | Message classes whose handlers may have partially run (e-mails, notifications, payments): their retry confirm warns about repeated side effects. |
-| `retry.lock_ttl` | `30.0` | With `symfony/lock` (service `lock.factory`), a retry / removal locks `transport + id` and looks the message up again inside the lock. |
+| `retry.lock_ttl` | `30.0` | Seconds a retry / removal locks `transport + id` (the message is looked up again inside the lock). |
+| `retry.lock_factory` | `lock.factory` | Since 1.3.0: service id of the `LockFactory` of that lock. When the default `lock.factory` does not exist (`framework.lock: false`), a local flock store (one host). Several servers: a factory with a shared store (Redis, PostgreSQL, DBAL). Another id that does not exist fails the container build. |
+| `conflict_response.status` | `null` | Since 1.3.0: status of a lock conflict on a bundle route, `409` or `503`. `null` = `nowo_transaction_doctrine.conflict_response.status` when NowoTransactionDoctrineBundle is registered, else `409`. See [CONCURRENCY.md](CONCURRENCY.md). |
+| `conflict_response.error_page` | `false` | Since 1.3.0: `true` renders the conflict with your error page (an `HttpException` with the status, `X-Conflict-Code` and, for `CONFLICT_001`, `Retry-After`) instead of the platform answer. |
 
 ## Queue depth and HealthKit
 
