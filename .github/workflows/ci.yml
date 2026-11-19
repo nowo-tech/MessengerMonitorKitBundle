@@ -271,8 +271,8 @@ jobs:
 
       - name: Install dependencies (DBAL ${{ matrix.dbal }})
         run: |
-          composer install --prefer-dist --no-progress --no-interaction
-          composer update doctrine/dbal --with "doctrine/dbal:^${{ matrix.dbal }}" --with-all-dependencies --prefer-dist --no-progress --no-interaction
+          # A full update: dev requirements (instance-settings-bundle) move to versions that allow the chosen DBAL.
+          composer update --with "doctrine/dbal:^${{ matrix.dbal }}" --with-all-dependencies --prefer-dist --no-progress --no-interaction
           composer show doctrine/dbal | grep -E '^versions'
 
       - name: Race, conflict and history-writer tests on MySQL, MariaDB and PostgreSQL
@@ -304,10 +304,9 @@ jobs:
           extensions: json, pdo_sqlite, sodium
           tools: composer:v2
 
+      # The lock (config.platform.php 8.2.0, as in the PHPStan job), then only nowo-tech/transaction-* lowered.
       - name: Install dependencies
-        run: |
-          composer config platform.php 8.4.1
-          composer update --prefer-dist --no-progress --no-interaction
+        run: composer install --prefer-dist --no-progress --no-interaction
 
       - name: Downgrade nowo-tech/transaction-* to the lowest allowed versions
         run: |
