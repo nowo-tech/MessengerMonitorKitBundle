@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "15afedb63b97daae8672f716be2d72c8",
+    "content-hash": "91eba42638d3e76ef254d99a21a0144c",
     "packages": [
         {
             "name": "doctrine/collections",
@@ -1065,11 +1065,11 @@
         },
         {
             "name": "nowo-tech/messenger-monitor-kit-bundle",
-            "version": "dev-chore/transaction-doctrine-1.8",
+            "version": "dev-chore/demo-platform-shell",
             "dist": {
                 "type": "path",
                 "url": "/var/messenger-monitor-kit-bundle",
-                "reference": "2d41c8dfc5fe6e7dba16af9c08dc758a0b2e1751"
+                "reference": "ec19dfb359a3d6c9f184f7261adfae367fb184f1"
             },
             "require": {
                 "doctrine/dbal": "^3.8 || ^4.0",
@@ -1428,16 +1428,16 @@
         },
         {
             "name": "nowo-tech/ui-kit-bundle",
-            "version": "v2.58.1",
+            "version": "v2.62.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/nowo-tech/UiKitBundle.git",
-                "reference": "1b4fc0130612c03de3313a879080165f9f76cd0f"
+                "reference": "5fb5c5fab50ea8806eec285255fc10cce7c40ec3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/nowo-tech/UiKitBundle/zipball/1b4fc0130612c03de3313a879080165f9f76cd0f",
-                "reference": "1b4fc0130612c03de3313a879080165f9f76cd0f",
+                "url": "https://api.github.com/repos/nowo-tech/UiKitBundle/zipball/5fb5c5fab50ea8806eec285255fc10cce7c40ec3",
+                "reference": "5fb5c5fab50ea8806eec285255fc10cce7c40ec3",
                 "shasum": ""
             },
             "require": {
@@ -1484,7 +1484,8 @@
                 "symfony/validator": "Colour validation in the optional appearance forms"
             },
             "bin": [
-                "bin/nowo-ui-token-lint"
+                "bin/nowo-ui-token-lint",
+                "bin/nowo-ui-demo-style-lint"
             ],
             "type": "symfony-bundle",
             "autoload": {
@@ -1526,8 +1527,8 @@
                 "issues": "https://github.com/nowo-tech/UiKitBundle/issues",
                 "source": "https://github.com/nowo-tech/UiKitBundle"
             },
-            "time": "2026-11-18T15:42:30+00:00",
-            "published-time": "2026-11-18T15:45:49+00:00"
+            "time": "2026-11-21T01:22:50+00:00",
+            "published-time": "2026-11-21T01:26:09+00:00"
         },
         {
             "name": "psr/cache",
