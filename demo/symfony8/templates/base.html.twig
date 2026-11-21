@@ -1,21 +1,20 @@
-{#- REQ-DEMO-014: the demo shell is UiKit's admin layout with UiKit's default theme (nowo-ui.css from the bundle's own
-    asset package, no CSS framework, no CDN). It is also the host layout of the bundle pages (nowo_ui_kit.layouts.admin).
-    The header menu lists the demo pages with the active item. -#}
-{% extends '@NowoUiKit/layout/admin.html.twig' %}
+{#- REQ-DEMO-014: the demo runs inside UiKit's shared demo platform shell (@NowoUiKit/demo_platform/layout.html.twig):
+    the same top bar, aside, content width, theme and footer as every other nowo-tech bundle demo. This file only
+    declares the demo (nowo_ui_demo_platform). It is also the host layout of the bundle pages (nowo_ui_kit.layouts.admin). -#}
+{% extends '@NowoUiKit/demo_platform/layout.html.twig' %}
+{% set nowo_ui_demo_platform = {
+    bundle: 'Messenger Monitor Kit',
+    home_route: 'demo_home',
+    repository: 'https://github.com/nowo-tech/MessengerMonitorKitBundle',
+    translation_domain: false,
+    locales: [],
+    nav: [
+        {label: 'Home', route: 'demo_home'},
+        {label: 'Monitor', route: 'nowo_messenger_monitor_kit_dashboard', section: 'Messenger monitor'},
+        {label: 'History', route: 'nowo_messenger_monitor_kit_history', section: 'Messenger monitor'},
+        {label: 'Failed', route: 'nowo_messenger_monitor_kit_transport', params: {name: 'failed'}, section: 'Messenger monitor'},
+        {label: 'Settings', route: 'nowo_messenger_monitor_kit_settings', section: 'Messenger monitor'},
+    ],
+} %}
 
 {% block nowo_ui_document_title %}{% block title %}Messenger Monitor Kit Demo{% endblock %}{% endblock %}
-
-{% block nowo_ui_navigation %}
-    {% set _route = app.request.attributes.get('_route') %}
-    <header class="nowo-ui-header" data-testid="demo-masthead">
-        <a class="nowo-ui-brand" href="{{ path('demo_home') }}">Messenger Monitor Kit Bundle Demo</a>
-        <nav class="nowo-ui-menu" aria-label="Demo">
-            <a class="nowo-ui-link" href="{{ path('demo_home') }}"{% if _route == 'demo_home' %} aria-current="page"{% endif %}>Home</a>
-            <a class="nowo-ui-link" href="{{ path('nowo_messenger_monitor_kit_dashboard') }}"{% if _route == 'nowo_messenger_monitor_kit_dashboard' %} aria-current="page"{% endif %}>Monitor</a>
-            <a class="nowo-ui-link" href="{{ path('nowo_messenger_monitor_kit_transport', {name: 'failed'}) }}"{% if _route == 'nowo_messenger_monitor_kit_transport' %} aria-current="page"{% endif %}>Failed</a>
-            <a class="nowo-ui-link" href="{{ path('nowo_messenger_monitor_kit_settings') }}"{% if _route == 'nowo_messenger_monitor_kit_settings' %} aria-current="page"{% endif %}>Settings</a>
-        </nav>
-    </header>
-{% endblock %}
-
-{% block nowo_ui_content %}{% block body %}{% endblock %}{% endblock %}
