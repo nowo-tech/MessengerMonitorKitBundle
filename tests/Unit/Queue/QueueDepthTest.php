@@ -12,12 +12,12 @@ use Nowo\MessengerMonitorKitBundle\Tests\Fixtures\DemoMessage;
 use Nowo\MessengerMonitorKitBundle\Tests\Support\MemoryTransport;
 use Nowo\MessengerMonitorKitBundle\Tests\Support\Monitor;
 use Nowo\MessengerMonitorKitBundle\Tests\Support\RecordingBus;
+use Nowo\MessengerMonitorKitBundle\Tests\Support\UncountableTransport;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\AbstractLogger;
 use Stringable;
 use Symfony\Component\Messenger\Envelope;
-use Symfony\Component\Messenger\Transport\InMemory\InMemoryTransport;
 
 final class QueueDepthTest extends TestCase
 {
@@ -33,7 +33,7 @@ final class QueueDepthTest extends TestCase
         $broken->failCount = true;
         $logger            = $this->logger();
 
-        $transports = Monitor::transports(['async' => $async, 'failed' => $failed, 'broken' => $broken, 'memory' => new InMemoryTransport(), 'sync' => Monitor::sync()]);
+        $transports = Monitor::transports(['async' => $async, 'failed' => $failed, 'broken' => $broken, 'memory' => new UncountableTransport(), 'sync' => Monitor::sync()]);
         $report     = (new QueueDepth($transports, new FailedMessageRetrier($transports, new RecordingBus()), [], $logger))->report();
 
         self::assertSame(['async' => 2, 'failed' => 1, 'broken' => null, 'memory' => null], $report->toArray());
