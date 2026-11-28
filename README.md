@@ -87,7 +87,7 @@ nowo_messenger_monitor_kit:
 
 ## Requirements
 
-- PHP 8.2–8.5, Symfony 7.4 / 8.0 / 8.1, Doctrine ORM 3.3+
+- PHP 8.2–8.6, Symfony 7.4 / 8.0 / 8.1, Doctrine ORM 3.3+
 - `zenstruck/messenger-monitor-bundle` ^0.6 || ^0.7, UiKitBundle ^2.21, FormKitBundle ^2.17 (dependencies)
 - A listable failure transport (Doctrine or Redis) for the failed message pages
 
