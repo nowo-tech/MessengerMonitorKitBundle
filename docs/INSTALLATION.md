@@ -14,7 +14,7 @@
 
 ## Requirements
 
-- PHP 8.2–8.5, Symfony 7.4 / 8.0 / 8.1 (Symfony 8 needs PHP 8.4+).
+- PHP 8.2–8.6, Symfony 7.4 / 8.0 / 8.1 (Symfony 8 needs PHP 8.4+).
 - `symfony/messenger` with at least one transport; a **listable** failure transport (Doctrine or Redis) for the
   failed message pages and the retry actions.
 - Doctrine ORM (`doctrine/doctrine-bundle`, `doctrine/orm`) for the history (zenstruck ORM storage).

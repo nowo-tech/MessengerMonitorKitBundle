@@ -12,10 +12,10 @@ use Nowo\MessengerMonitorKitBundle\Tests\Fixtures\DemoMessage;
 use Nowo\MessengerMonitorKitBundle\Tests\Support\MemoryTransport;
 use Nowo\MessengerMonitorKitBundle\Tests\Support\Monitor;
 use Nowo\MessengerMonitorKitBundle\Tests\Support\RecordingBus;
+use Nowo\MessengerMonitorKitBundle\Tests\Support\UncountableTransport;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Messenger\Envelope;
-use Symfony\Component\Messenger\Transport\InMemory\InMemoryTransport;
 
 final class QueueDepthProbeTest extends TestCase
 {
@@ -46,12 +46,12 @@ final class QueueDepthProbeTest extends TestCase
     #[Test]
     public function itDegradesWhenNothingCanBeCounted(): void
     {
-        $transports = Monitor::transports(['memory' => new InMemoryTransport()]);
+        $transports = Monitor::transports(['memory' => new UncountableTransport()]);
         $probe      = new QueueDepthProbe(new QueueDepth($transports, new FailedMessageRetrier($transports, new RecordingBus())));
 
         self::assertSame(HealthStatus::Degraded, $probe->check(1.0)->status);
 
-        $failedOnly = Monitor::transports(['memory' => new InMemoryTransport(), 'failed' => new MemoryTransport()]);
+        $failedOnly = Monitor::transports(['memory' => new UncountableTransport(), 'failed' => new MemoryTransport()]);
         $onlyFailed = new QueueDepthProbe(new QueueDepth($failedOnly, new FailedMessageRetrier($failedOnly, new RecordingBus())), 0, 0);
         self::assertSame(HealthStatus::Ok, $onlyFailed->check(1.0)->status, 'no pending count: the pending thresholds are skipped');
     }
